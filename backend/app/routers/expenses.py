@@ -21,7 +21,7 @@ def add_expense(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return create_expense(db, current_user.id, expense_in.category, expense_in.amount, expense_in.description, expense_in.date)
+    return create_expense(db, current_user.id, **expense_in.model_dump())
 
 @router.get("/get-expenses", response_model=list[ExpenseOut], status_code=200)
 def get_expenses(
