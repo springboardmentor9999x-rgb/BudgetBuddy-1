@@ -23,3 +23,5 @@ class User(Base):
     created_at = Column(DateTime, default=get_utc_time_now)
     
     profile = relationship("Profile", back_populates="owner", uselist=False)
+    expenses = relationship("Expense", back_populates="user")
+    incomes = relationship("Income", back_populates="user")
