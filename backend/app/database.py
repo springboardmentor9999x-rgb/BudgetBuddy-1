@@ -19,6 +19,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# if __name__ == "__main__":
-#     print(DATABASE_URL)
