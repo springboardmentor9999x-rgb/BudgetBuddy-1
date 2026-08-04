@@ -20,7 +20,7 @@ from app.schemas.user import OTPVerification
 
 router = APIRouter()
 
-@router.post("/signup", response_model=UserOut)
+@router.post("/signup", response_model=UserOut, status_code=201)
 def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     if get_user_by_email(db, user_in.email):
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -28,7 +28,7 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     user = create_user(db, user_in.email, user_in.password, user_in.full_name, user_in.monthly_income, user_in.currency)
     return user
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, status_code=200)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session =Depends(get_db), response: Response = None):
     user = get_user_by_email(db, form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password) or not user.is_verified:
