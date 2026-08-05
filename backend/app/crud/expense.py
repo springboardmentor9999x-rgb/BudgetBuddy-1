@@ -1,8 +1,9 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+
 from app.schemas.expense import ExpenseCreate
 from app.models.expense import Expense
-from datetime import datetime
 
 
 def create_expense(db: Session, user_id: int, category: str, amount: float, description: str | None, date: datetime)-> Expense:
