@@ -15,5 +15,6 @@ class Expense(Base):
     amount = Column(DECIMAL(12, 2), nullable=False)
     description = Column(Text, nullable=True)
     date = Column(DateTime, nullable=False)
+    account = Column(String(1000), nullable=False, default="Cash")
 
     user = relationship("User", back_populates="expenses")
