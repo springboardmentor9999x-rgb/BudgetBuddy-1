@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+
+
+.background-color {
+  background-color: rgba(22,28,36,0.85)
+}
+
+.background-light {
+  background-color: rgba(49, 47, 47, 0.85)
+}
