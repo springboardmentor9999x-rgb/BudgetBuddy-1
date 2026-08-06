@@ -23,7 +23,7 @@ def add_income(
     ):
     return create_income(db, user_id=current_user.id, **income.model_dump())
 
-@router.get("/incomes", response_model=list[IncomeResponse], status_code=200)
+@router.get("/get-incomes", response_model=list[IncomeResponse], status_code=200)
 def list_incomes(
     skip: int = 0,
     limit: int = 100,
@@ -32,7 +32,7 @@ def list_incomes(
     ):
     return get_incomes_by_user(db, current_user.id, skip=skip, limit=limit)
 
-@router.get("/income/{income_id}", response_model=IncomeResponse, status_code=200)
+@router.get("/get-income/{income_id}", response_model=IncomeResponse, status_code=200)
 def get_income_by_id(
     income_id: int, 
     db: Session = Depends(get_db),
@@ -43,7 +43,7 @@ def get_income_by_id(
         raise HTTPException(status_code=404, detail="Income not found")
     return income
 
-@router.put("/income/{income_id}", response_model=IncomeResponse, status_code=200)
+@router.put("/update-income/{income_id}", response_model=IncomeResponse, status_code=200)
 def update_income_by_id(
     income_id: int, 
     income_update: IncomeUpdate, 
@@ -55,7 +55,7 @@ def update_income_by_id(
         raise HTTPException(status_code=404, detail="Income not found")
     return updated_income
 
-@router.delete("/income/{income_id}", status_code=200)
+@router.delete("/delete-income/{income_id}", status_code=200)
 def delete_income_by_id(
     income_id: int, 
     db: Session = Depends(get_db),
