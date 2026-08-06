@@ -14,6 +14,5 @@ class ExpenseCreate(ExpenseBase):
 
 class ExpenseOut(ExpenseBase):
     id: int
-    user_id: int
 
     model_config = ConfigDict(from_attributes=True)

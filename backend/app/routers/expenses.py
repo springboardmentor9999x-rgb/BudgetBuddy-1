@@ -55,7 +55,7 @@ def update_expense_by_id(
         raise HTTPException(status_code=404, detail="Expense not found")
     return expense
 
-@router.delete("/delete-expense/{expense_id}", response_model=dict[str, str], status_code=200)
+@router.delete("/delete-expense/{expense_id}", status_code=200)
 def delete_expense_by_id(
     expense_id: int,
     db: Session = Depends(get_db),

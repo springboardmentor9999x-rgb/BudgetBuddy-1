@@ -7,8 +7,8 @@ from app.models.income import Income
 
 
 
-def create_income(db: Session, user_id: int, amount: float, source: str, date: datetime) -> Income:
-    income_data = Income(user_id=user_id, amount=amount, source=source, date=date)
+def create_income(db: Session, user_id: int, amount: float, source: str, date: datetime, account: str) -> Income:
+    income_data = Income(user_id=user_id, amount=amount, source=source, date=date, account=account)
     db.add(income_data)
     db.commit()
     db.refresh(income_data)

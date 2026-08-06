@@ -12,5 +12,6 @@ class Income(Base):
     source = Column(String(100), nullable=False)
     amount = Column(DECIMAL(12, 2), nullable=False)
     date = Column(DateTime, nullable=False)
+    account = Column(String(100), nullable=True, default="Cash")
 
     user = relationship("User", back_populates="incomes")

@@ -8,7 +8,7 @@ from jose import jwt
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.user import UserCreate, UserOut, Token
+from app.schemas.user import TokenWithUserDetails, UserCreate, UserDetails, UserOut, Token
 from app.crud.user import get_user_by_email, create_user
 from app.core.security import (
     verify_password, 
@@ -17,6 +17,7 @@ from app.core.security import (
     verify_refresh_token
 )
 from app.schemas.user import OTPVerification
+from app.core.deps import get_current_user
 
 router = APIRouter()
 
@@ -28,7 +29,7 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     user = create_user(db, user_in.email, user_in.password, user_in.full_name, user_in.monthly_income, user_in.currency)
     return user
 
-@router.post("/login", response_model=Token, status_code=200)
+@router.post("/login", response_model=TokenWithUserDetails, status_code=200)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session =Depends(get_db), response: Response = None):
     user = get_user_by_email(db, form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password) or not user.is_verified:
@@ -38,7 +39,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session =Depends
     refresh_token = create_refresh_token(data={"sub": user.email, "role": user.role})
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="strict",max_age=60*60*24*7)  # 7 days
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 @router.get("/logout", status_code=200)
 def logout(response: Response):
@@ -71,3 +72,7 @@ def refresh_token(refresh_token: str = Cookie(None)):
         return {"access_token": access_token, "token_type": "bearer"}
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
+    
+@router.get("/me", response_model=UserDetails, status_code=200)
+def get_current_user_details(current_user: UserDetails = Depends(get_current_user)):
+    return current_user

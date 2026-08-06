@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -12,8 +12,20 @@ class UserOut(BaseModel):
     email: EmailStr
     role: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+class ProfileOut(BaseModel):
+    full_name: str
+    monthly_income: float
+    currency: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class UserDetails(UserOut):
+    profile: ProfileOut
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class Token(BaseModel):
     access_token: str
@@ -22,3 +34,7 @@ class Token(BaseModel):
 class OTPVerification(BaseModel):
     email: EmailStr
     otp: str
+    
+class TokenWithUserDetails(Token):
+    user: UserDetails
+    
