@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import RegisterFormBlock from "../components/auth/RegisterPage"
-import SigninPage from "../components/auth/SigninPage"
+import RegisterFormBlock from "../features/auth/RegisterPage.tsx"
+import SigninPage from "../features/auth/SigninPage.tsx"
 
 
 const AuthPage = () => {
