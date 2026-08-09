@@ -12,7 +12,7 @@ import {
   FaEdit,
 } from "react-icons/fa";
 
-import useExpenseStore from "../hooks/useExpenseStore";
+import useExpenseStore from "../store/useExpenseStore.ts";
 import type { ExpenseCreate } from "../types/expense.type";
 
 type ExpenseFormProps = {
@@ -42,7 +42,13 @@ const ExpenseForm = ({
   editingId,
   formData,
 }: ExpenseFormProps) => {
-  const { addNewExpense, updateExistingExpense } = useExpenseStore();
+
+  // store hooks for adding and updating expenses
+  const addNewExpense = useExpenseStore((state) => state.addNewExpense);
+  const updateExistingExpense = useExpenseStore(
+    (state) => state.updateExistingExpense
+  );
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (

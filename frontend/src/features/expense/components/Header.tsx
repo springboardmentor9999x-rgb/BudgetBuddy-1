@@ -5,7 +5,7 @@ const Header = ({ openCreateForm }: { openCreateForm: () => void }) => {
   return (
     <div className="md:mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8">
       <div className="flex items-center gap-3">
-        <div className="p-2 sm:p-3 bg-gradient-to-br from-red-500/20 to-red-600/10 rounded-xl sm:rounded-2xl shadow-lg border border-red-500/20">
+        <div className="p-2 sm:p-3 bg-linear-to-br from-red-500/20 to-red-600/10 rounded-xl sm:rounded-2xl shadow-lg border border-red-500/20">
           <HiMiniCurrencyRupee className="text-2xl sm:text-3xl text-red-400" />
         </div>
         <div>
@@ -20,10 +20,10 @@ const Header = ({ openCreateForm }: { openCreateForm: () => void }) => {
 
       <button
         onClick={openCreateForm}
-        className="group relative bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-2 overflow-hidden w-full sm:w-auto justify-center"
+        className="group relative bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-2 overflow-hidden w-full sm:w-auto justify-center"
       >
         {/* Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-linear-to-r from-purple-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         <FaPlus className="text-sm sm:text-base group-hover:rotate-90 transition-transform duration-300" />
         <span className="font-medium text-sm sm:text-base">Add Expense</span>

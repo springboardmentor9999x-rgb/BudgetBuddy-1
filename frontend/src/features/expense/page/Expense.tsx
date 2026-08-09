@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useShallow } from 'zustand/shallow';
 
 import ExpenseCard from '../components/ExpenseCard.tsx';
 import ExpenseForm from '../components/ExpenseForm.tsx';
 import DeleteConfirm from '../../DeleteConfirm';
 
-import useExpenseStore from '../hooks/useExpenseStore';
+import useExpenseStore from '../store/useExpenseStore.ts';
 import type { ExpenseCreate, Expense } from '../types/expense.type';
 
 import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
@@ -14,8 +15,14 @@ import Header from '../components/Header.tsx';
 
 
 const ExpensePage = () => {
-  // ─── Expense Store Hooks ─────────────────────────────
-  const { expenses, fetchExpenses, deleteExistingExpense } = useExpenseStore();
+  // ─── Expense Store Hooks ────────
+  const { expenses, fetchExpenses, deleteExistingExpense } = useExpenseStore(
+    useShallow((state) => ({
+      expenses: state.expenses,
+      fetchExpenses: state.fetchExpenses,
+      deleteExistingExpense: state.deleteExistingExpense,
+    }))
+  );
 
   const [showForm, setShowForm] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -27,7 +34,7 @@ const ExpensePage = () => {
     account: '',
   });
 
-  // ─── Delete modal state ────────────────────────────
+  // ─── Delete modal state ───────
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -179,7 +186,7 @@ const ExpensePage = () => {
           </div>
         </main>
 
-        {/* ─── MODAL FORM ────────────────────────────────────── */}
+        {/* ─── MODAL FORM ───────── */}
         {showForm && (
           <ExpenseForm
             setShowForm={setShowForm}

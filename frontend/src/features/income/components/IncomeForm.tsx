@@ -12,7 +12,8 @@ import {
 } from "react-icons/fa";
 
 import type { IncomeCreate } from "../types/income.type.ts";
-import useIncomeStore from "../hooks/useIncomeStore.ts";
+import useIncomeStore from "../store/useIncomeStore.ts";
+import { useShallow } from "zustand/shallow";
 
 type IncomeFormProps = {
   setShowForm: React.Dispatch<React.SetStateAction<boolean>>;
@@ -45,7 +46,14 @@ const IncomeForm = ({
   editingId,
   formData,
 }: IncomeFormProps) => {
-  const { createIncome, updateIncomeData } = useIncomeStore();
+
+
+  const { createIncome, updateIncomeData } = useIncomeStore(
+    useShallow((state) => ({
+      createIncome: state.createIncome,
+      updateIncomeData: state.updateIncomeData,
+    }))
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (

@@ -1,52 +1,3 @@
-// import { FaEdit, FaTrash } from "react-icons/fa";
-
-// import type { Expense } from "../types/expense.type";
-
-// type ExpenseCardProps = {
-//   expense: Expense;
-//   onEdit: () => void;
-//   onDelete: () => void;
-// };
-
-// const ExpenseCard = ({ expense, onEdit, onDelete }: ExpenseCardProps) => (
-//   <div className="bg-[#1e252e] rounded-xl shadow-md p-5 hover:shadow-lg transition flex flex-col justify-between border border-white/5">
-//     <div>
-//       <div className="flex justify-between items-start">
-//         <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
-//           {expense.category}
-//         </span>
-//         <div className="flex gap-2">
-//           <button
-//             onClick={onEdit}
-//             className="text-blue-500 hover:text-blue-700 transition p-2 bg-gray-50/10 rounded hover:scale-95"
-//             aria-label="Edit"
-//           >
-//             <FaEdit />
-//           </button>
-//           <button
-//             onClick={onDelete}
-//             className="text-red-500 hover:text-red-700 transition p-2 bg-red-400/10 rounded hover:scale-95"
-//             aria-label="Delete"
-//           >
-//             <FaTrash />
-//           </button>
-//         </div>
-//       </div>
-//       <p className="text-2xl font-bold text-gray-200 mt-2">
-//         Rs {expense.amount.toFixed(2)}
-//       </p>
-//       <p className="text-gray-300 mt-1">{expense.description}</p>
-//       <p className="text-gray-400 mt-1">Account: {expense.account}</p>
-//     </div>
-//     <div className="mt-4 text-sm text-gray-400 border-t pt-2 flex justify-between">
-//       <span>{new Date(expense.date).toLocaleDateString()}</span>
-//     </div>
-//   </div>
-// );
-
-// export default ExpenseCard;
-// ExpenseCard.tsx
-// ExpenseCard.tsx
 import { FaEdit, FaTrash } from "react-icons/fa";
 import type { Expense } from "../types/expense.type";
 
@@ -58,15 +9,15 @@ type ExpenseCardProps = {
 
 const ExpenseCard = ({ expense, onEdit, onDelete }: ExpenseCardProps) => (
   <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 px-3 sm:px-4 hover:bg-red-500/10 hover:cursor-pointer transition-all duration-200 border-b border-white/5 last:border-b-0 group gap-2 sm:gap-0">
-    
+
     {/* Left side - Category and Description */}
     <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-      <div className="min-w-[80px] sm:min-w-[100px] flex-shrink-0">
+      <div className="min-w-20 sm:min-w-25 shrink-0">
         <span className="text-slate-800 font-medium text-xs sm:text-sm bg-orange-400 px-2 py-1 rounded-lg whitespace-nowrap">
           {expense.category}
         </span>
       </div>
-      
+
       {/* Description */}
       <div className="flex-1 min-w-0">
         <p className="text-gray-400 text-xs sm:text-sm truncate">
@@ -90,14 +41,14 @@ const ExpenseCard = ({ expense, onEdit, onDelete }: ExpenseCardProps) => (
       </span>
 
       {/* Action buttons */}
-      <div className="flex gap-1 flex-shrink-0">
+      <div className="flex gap-1 shrink-0">
         <button
           onClick={onEdit}
           className="p-1.5 rounded hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 transition hover:cursor-pointer"
           aria-label="Edit"
         >
           <span className="text-[14px] md:text-[15px]"> <FaEdit /></span>
-         
+
         </button>
         <button
           onClick={onDelete}

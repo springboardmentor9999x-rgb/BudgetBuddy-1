@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import IncomeCard from '../components/IncomeCard.tsx';
@@ -6,17 +6,33 @@ import IncomeForm from '../components/IncomeForm.tsx';
 import DeleteConfirm from '../../DeleteConfirm.tsx';
 
 import type { IncomeCreate } from '../types/income.type.ts';
-import useIncomeStore from '../hooks/useIncomeStore.ts';
+import useIncomeStore from '../store/useIncomeStore.ts';
 import Header from '../components/Header.tsx';
 
 import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa"
-import { MdTrendingUp } from "react-icons/md"
 import { BsGraphUpArrow } from 'react-icons/bs';
 import { GrTransaction } from 'react-icons/gr';
+import { useShallow } from 'zustand/shallow';
 
 const IncomePage = () => {
   // ─── State ────────
-  const { incomes, deleteIncomeData } = useIncomeStore();
+  const { incomes, fetchIncomes, deleteIncomeData } = useIncomeStore(
+    useShallow((state) => ({
+      incomes: state.incomes,
+      fetchIncomes: state.fetchIncomes,
+      deleteIncomeData: state.deleteIncomeData,
+    }))
+  );
+
+  useEffect(() => {
+    try {
+      fetchIncomes();
+    } catch (error) {
+      console.error('Failed to fetch incomes:', error);
+      toast.error('Failed to fetch incomes. Please try again.');
+    }
+  }, [fetchIncomes]);
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState<IncomeCreate>({
@@ -26,7 +42,7 @@ const IncomePage = () => {
     account: '',
   });
 
-   // ─── Delete modal state ────────
+  // ─── Delete modal state ────────
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -97,9 +113,9 @@ const IncomePage = () => {
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">Total Incomes</p>
                   <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 50,000</p>
-                  <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                  {/* <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
                     <MdTrendingUp className="inline" /> 8% from last month
-                  </p>
+                  </p> */}
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <FaWallet className="text-green-400 text-lg sm:text-xl" />
@@ -113,9 +129,9 @@ const IncomePage = () => {
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">This Month</p>
                   <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 5,000</p>
-                  <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                  {/* <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
                     <MdTrendingUp className="inline" /> 15% from last month
-                  </p>
+                  </p> */}
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <FaCalendarAlt className="text-blue-400 text-lg sm:text-xl" />
