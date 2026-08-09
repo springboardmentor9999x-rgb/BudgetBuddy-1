@@ -1,7 +1,7 @@
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-
+import { useShallow } from "zustand/shallow";
 import {
   FaUser,
   FaLock,
@@ -10,8 +10,10 @@ import {
 } from "react-icons/fa";
 
 import bbImage from "../../assets/bb.png";
-import useAuth from "./hooks/useAuthStore.ts";
+
+import { useAuthStore } from "./store/useAuthStore.ts";
 import Loading from "../Loading.tsx";
+
 
 type LoginFormData = {
   username: string;
@@ -25,7 +27,12 @@ const labelClass = "block text-sm font-medium text-gray-300 mb-1.5";
 
 const SigninPage = ({ setRegisterClicked }: { setRegisterClicked: setRegisterClickedType }) => {
 
-  const { loading, user, loginUser } = useAuth();
+  const { loading, user, login } = useAuthStore(useShallow((state) => ({
+    loading: state.loading,
+    user: state.user,
+    login: state.login,
+  })));
+
   const navigate = useNavigate();
 
   const [loginData, setLoginData] = useState<LoginFormData>({
@@ -46,12 +53,12 @@ const SigninPage = ({ setRegisterClicked }: { setRegisterClicked: setRegisterCli
   const handleLoginSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await loginUser(loginData.username, loginData.password);
+      await login(loginData.username, loginData.password);
       toast.success("Login successful!");
 
       setTimeout(() => {
         navigate('/dashboard')
-      }, 1000)
+      }, 500)
     } catch (error: any) {
       if (error?.status === 401) {
         toast.error("Invalid username or password.");
@@ -66,12 +73,9 @@ const SigninPage = ({ setRegisterClicked }: { setRegisterClicked: setRegisterCli
     return <Loading />;
   }
 
-  if (user) {
-    return <Navigate to="/dashboard" />;
-  }
-
   return (
     <>
+      {user ? <Navigate to="/dashboard" /> : null}
       <div className="flex items-center justify-center min-h-screen p-4 md:p-6 bg-[radial-gradient(circle_at_20%_30%,#1a1e26,#0b0d10_80%)]">
         <div className="flex flex-col md:flex-row w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl shadow-black/40 bg-[rgba(22,28,36,0.85)] backdrop-blur-[6px] border border-white/5">
           {/* Image side */}

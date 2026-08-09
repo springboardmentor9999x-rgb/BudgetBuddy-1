@@ -1,16 +1,18 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Navigate, useNavigate } from "react-router";
+import { useShallow } from "zustand/shallow";
 
-// import { useAuthStore } from "../../store/AuthStore";
-// import { api } from "../../api/api";
-import useAuth from "./hooks/useAuthStore";
+import { useAuthStore } from "./store/useAuthStore";
 
 
 export default function OtpVerify() {
 
   const [otp, setOtp] = useState("");
-  const { email, verifyOtp } = useAuth();
+  const { email, verifyOtp } = useAuthStore(useShallow((state) => ({
+    email: state.email,
+    verifyOtp: state.verifyOtp
+  })));
 
   const navigate = useNavigate()
 

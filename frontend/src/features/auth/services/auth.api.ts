@@ -40,7 +40,7 @@ async function refreshTokenApi() {
 
 async function logoutApi() {
   try {
-    const response = await api.post("/auth/logout");
+    const response = await api.get("/auth/logout");
     return response.data;
   } catch (error) {
     throw error;

@@ -11,26 +11,15 @@ import {
   FaMoneyBillWave,
   FaGlobe,
 } from "react-icons/fa";
-
-// import { api } from "../../api/api";
 import bbImage from "../../assets/bb.png";
-// import { useAuthStore } from "../../store/AuthStore";
-import useAuth from "./hooks/useAuthStore";
-import type { registerUser } from "./types/auth.type";
 
-// interface RegisterFormData {
-//   email: string;
-//   password: string;
-//   full_name: string;
-//   monthly_income: number | string;
-//   currency: string;
-// }
+import {useAuthStore} from "./store/useAuthStore.ts";
+import type { registerUser } from "./types/auth.type";
 
 const CURRENCIES = ["INR", "USD", "JPY"];
 
 // Reusable Tailwind classes
-const inputClass =
-  "w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 outline-none transition bg-[rgba(15,20,26,0.7)] border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40";
+const inputClass = "w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 outline-none transition bg-[rgba(15,20,26,0.7)] border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40";
 const labelClass = "block text-sm font-medium text-gray-300 mb-1.5";
 
 export default function RegisterFormBlock({
@@ -39,12 +28,8 @@ export default function RegisterFormBlock({
   setRegisterClicked: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
 
-  const { registerUser } = useAuth();
-  const navigate = useNavigate();
-
-  // const setEmail = useAuthStore((state) => state.setEmail);
-
-  // ---------- State (all at top) ----------
+  
+  // ---------- State  ----------
   const [registerData, setRegisterData] = useState<registerUser>({
     email: "",
     password: "",
@@ -53,6 +38,9 @@ export default function RegisterFormBlock({
     currency: "INR", // fixed default
   });
 
+  const registerUser = useAuthStore((state) => state.register);
+  const navigate = useNavigate();
+  
   const [registerError, setRegisterError] = useState("");
   const [loading, setLoading] = useState(false);
 
