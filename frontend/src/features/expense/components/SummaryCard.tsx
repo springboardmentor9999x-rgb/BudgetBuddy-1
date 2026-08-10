@@ -1,6 +1,6 @@
 
-import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
-import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
+import { FaWallet } from "react-icons/fa";
+import { MdTrendingUp } from "react-icons/md";
 
 
 const SummaryCard = () => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   FaSpinner,
@@ -13,6 +13,7 @@ import {
 
 import type { IncomeCreate } from "../types/income.type.ts";
 import useIncomeStore from "../store/useIncomeStore.ts";
+import useAccountStore from "../../account/store/useAccountStore.ts";
 import { useShallow } from "zustand/shallow";
 
 type IncomeFormProps = {
@@ -23,7 +24,7 @@ type IncomeFormProps = {
   formData: IncomeCreate;
 };
 
-// Predefined income sources – extend this list as needed
+// Predefined income sources
 const SOURCES = [
   "Salary",
   "Freelance",
@@ -35,7 +36,7 @@ const SOURCES = [
   "Other",
 ];
 
-// Shared input style (kept as class for consistency)
+// Shared input style
 const classStyle =
   "w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500 outline-none text-white transition placeholder-gray-500 scheme-dark";
 
@@ -46,15 +47,36 @@ const IncomeForm = ({
   editingId,
   formData,
 }: IncomeFormProps) => {
-
-
   const { createIncome, updateIncomeData } = useIncomeStore(
     useShallow((state) => ({
       createIncome: state.createIncome,
       updateIncomeData: state.updateIncomeData,
     }))
   );
+
+  const { bankAccounts, fetchBankAccounts } = useAccountStore(
+    useShallow((state) => ({
+      bankAccounts: state.bankAccounts,
+      fetchBankAccounts: state.fetchBankAccounts,
+    }))
+  );
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchBankAccounts();
+  }, [fetchBankAccounts]);
+
+  // Set default account selection if empty
+  useEffect(() => {
+    if (!formData.account && bankAccounts.length > 0) {
+      const firstAcc = bankAccounts[0];
+      setFormData((prev) => ({
+        ...prev,
+        account: `${firstAcc.bank_name} (${firstAcc.account_number})`,
+      }));
+    }
+  }, [bankAccounts, formData.account, setFormData]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -63,10 +85,9 @@ const IncomeForm = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Normalize date for display
-  if (formData.date) {
-    formData.date = new Date(formData.date).toISOString().split("T")[0];
-  }
+  const formattedDate = formData.date
+    ? new Date(formData.date).toISOString().split("T")[0]
+    : "";
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -75,7 +96,7 @@ const IncomeForm = ({
     try {
       const payload = {
         source: formData.source.trim(),
-        amount: formData.amount,
+        amount: Number(formData.amount),
         date: new Date(formData.date).toISOString(),
         account: formData.account.trim(),
       };
@@ -99,7 +120,7 @@ const IncomeForm = ({
 
   return (
     <>
-      {/* Dark dropdown styles – applies only to this form's select */}
+      {/* Dark dropdown styles */}
       <style>{`
         .dark-select option {
           background-color: #1f2937 !important;
@@ -199,28 +220,39 @@ const IncomeForm = ({
               <input
                 type="date"
                 name="date"
-                value={formData.date}
+                value={formattedDate}
                 onChange={handleInputChange}
                 className={classStyle}
                 required
               />
             </div>
 
-            {/* Account */}
+            {/* Account – Select Bank Account */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
                 <FaWallet className="inline mr-2 text-purple-400" />
-                Account
+                Bank Account
               </label>
-              <input
-                type="text"
+              <select
                 name="account"
                 value={formData.account}
                 onChange={handleInputChange}
-                placeholder="e.g. Checking, Savings"
-                className={classStyle}
+                className="dark-select w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500 outline-none text-white transition placeholder-gray-500"
                 required
-              />
+              >
+                <option value="" disabled>
+                  Select a bank account
+                </option>
+                {bankAccounts.map((acc) => {
+                  const val = `${acc.bank_name} (${acc.account_number})`;
+                  return (
+                    <option key={acc.id} value={val}>
+                      {acc.bank_name} ({acc.account_number}) — Bal: Rs {Number(acc.balance).toLocaleString("en-IN")}
+                    </option>
+                  );
+                })}
+                <option value="Cash">Cash / Manual Account</option>
+              </select>
             </div>
 
             {/* Buttons */}

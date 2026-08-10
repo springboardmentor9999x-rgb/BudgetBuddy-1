@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useAuthStore } from "../store/useAuthStore.ts";
 import RegisterFormBlock from "../RegisterPage.tsx";
@@ -10,7 +10,6 @@ import Loading from "../../Loading.tsx";
 const Auth = () => {
   setPageTitle("BudgetBuddy - Sign In / Register");
   const [registerClicked, setRegisterClicked] = useState(false);
-  // const getUserProfile = useAuthStore((state) => state.getUserProfile);
   const loading = useAuthStore((state) => state.loading);
 
   if (loading) {

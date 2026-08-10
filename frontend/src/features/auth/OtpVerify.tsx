@@ -28,7 +28,7 @@ export default function OtpVerify() {
       setTimeout(() => {
         navigate('/login');
       }, 1500);
-    } catch (error) {
+    } catch {
       toast.error('OTP verification failed. Please try again.');
     }
 

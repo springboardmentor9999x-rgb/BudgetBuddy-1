@@ -4,22 +4,28 @@ import { FaUserCircle } from 'react-icons/fa';
 import { RiLinksLine } from 'react-icons/ri';
 
 import useAccountStore from '../store/useAccountStore.ts';
+import { useAuthStore } from '../../auth/store/useAuthStore.ts';
 
 import AccountCard from '../components/AccountCard.tsx';
 import ProfileCard from '../components/ProfileCard.tsx';
 import BankAccounts from '../components/BankForm.tsx';
 import DeleteAccountSection from '../components/DeleteAccountSection.tsx';
 
-
-
 const AccountPage = () => {
   const bankAccounts = useAccountStore((state) => state.bankAccounts);
   const fetchBankAccounts = useAccountStore((state) => state.fetchBankAccounts);
+  const currentUser = useAuthStore((state) => state.user);
 
   // fetches the bank accounts when the component mounts
   useEffect(() => {
     fetchBankAccounts();
   }, [fetchBankAccounts]);
+
+  const displayUser = currentUser || {
+    email: "—",
+    role: "user",
+    profile: null,
+  };
 
   return (
     <div className="min-h-screen background-color text-gray-200">
@@ -34,15 +40,7 @@ const AccountPage = () => {
         </div>
 
         {/* Profile Card */}
-        <ProfileCard user={{
-          email: "test@example.com",
-          role: "user",
-          profile: {
-            full_name: "Test Name",
-            monthly_income: 10000,
-            currency: "INR"
-          }
-        }} />
+        <ProfileCard user={displayUser} />
 
         {/* Bank Accounts */}
         <BankAccounts />

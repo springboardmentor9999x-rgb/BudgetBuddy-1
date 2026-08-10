@@ -5,11 +5,12 @@ import IncomeCard from '../components/IncomeCard.tsx';
 import IncomeForm from '../components/IncomeForm.tsx';
 import DeleteConfirm from '../../DeleteConfirm.tsx';
 
-import type { IncomeCreate } from '../types/income.type.ts';
+import type { IncomeCreate, Income } from '../types/income.type.ts';
 import useIncomeStore from '../store/useIncomeStore.ts';
 import Header from '../components/Header.tsx';
 
-import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa"
+import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
+import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
 import { BsGraphUpArrow } from 'react-icons/bs';
 import { GrTransaction } from 'react-icons/gr';
 import { useShallow } from 'zustand/shallow';
@@ -34,7 +35,7 @@ const IncomePage = () => {
   }, [fetchIncomes]);
 
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<IncomeCreate>({
     source: '',
     amount: 0,
@@ -57,7 +58,7 @@ const IncomePage = () => {
     setShowForm(true);
   };
 
-  const openEditForm = (income: any) => {
+  const openEditForm = (income: Income) => {
     setFormData({
       source: income.source,
       amount: income.amount,
@@ -67,6 +68,41 @@ const IncomePage = () => {
     setEditingId(income.id);
     setShowForm(true);
   };
+
+  // ─── Dynamic Summary Card Calculations ────────
+  const totalIncomes = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const thisMonthIncome = incomes
+    .filter((i) => {
+      const d = new Date(i.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  const lastMonthIncome = incomes
+    .filter((i) => {
+      const d = new Date(i.date);
+      return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+    })
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const incomeMoMChange =
+    lastMonthIncome > 0
+      ? (((thisMonthIncome - lastMonthIncome) / lastMonthIncome) * 100).toFixed(1)
+      : thisMonthIncome > 0
+      ? '100'
+      : '0';
+
+  const thisYearIncome = incomes
+    .filter((i) => new Date(i.date).getFullYear() === currentYear)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   // ─── Delete Handlers ────────────────────────────────────────────
   const handleDeleteClick = (id: number) => {
@@ -79,7 +115,6 @@ const IncomePage = () => {
     setIsDeleting(true);
 
     try {
-      // ─── DELETE HOOK CALL ─────────
       await deleteIncomeData(deleteId);
       toast.success('Income deleted successfully!');
     } catch (err) {
@@ -112,10 +147,13 @@ const IncomePage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">Total Incomes</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 50,000</p>
-                  {/* <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
-                    <MdTrendingUp className="inline" /> 8% from last month
-                  </p> */}
+                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
+                    Rs {totalIncomes.toLocaleString('en-IN')}
+                  </p>
+                  <p className={`text-xs mt-1 flex items-center gap-1 ${Number(incomeMoMChange) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {Number(incomeMoMChange) >= 0 ? <MdTrendingUp className="inline" /> : <MdTrendingDown className="inline" />}
+                    {Number(incomeMoMChange) >= 0 ? '+' : ''}{incomeMoMChange}% from last month
+                  </p>
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <FaWallet className="text-green-400 text-lg sm:text-xl" />
@@ -128,10 +166,12 @@ const IncomePage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">This Month</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 5,000</p>
-                  {/* <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
-                    <MdTrendingUp className="inline" /> 15% from last month
-                  </p> */}
+                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
+                    Rs {thisMonthIncome.toLocaleString('en-IN')}
+                  </p>
+                  <p className="text-blue-400 text-xs mt-1 flex items-center gap-1">
+                    📅 Earnings for current month
+                  </p>
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <FaCalendarAlt className="text-blue-400 text-lg sm:text-xl" />
@@ -144,7 +184,9 @@ const IncomePage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">This Year</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 50,000</p>
+                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
+                    Rs {thisYearIncome.toLocaleString('en-IN')}
+                  </p>
                   <p className="text-purple-400 text-xs mt-1 flex items-center gap-1">
                     <BsGraphUpArrow /> Total earnings this year
                   </p>
@@ -206,8 +248,8 @@ const IncomePage = () => {
           isOpen={showDeleteModal}
           onClose={handleDeleteCancel}
           onConfirm={handleDeleteConfirm}
-          title="Delete Expense"
-          message={`Are you sure you want to delete this expense? This action cannot be undone.`}
+          title="Delete Income"
+          message={`Are you sure you want to delete this income entry? This action cannot be undone.`}
           isDeleting={isDeleting}
         />
       </div>

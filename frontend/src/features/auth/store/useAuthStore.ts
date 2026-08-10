@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       set({
         user,
       });
-    } catch (error) {
+    } catch {
       set({
         user: null,
       });
@@ -110,7 +110,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   refreshToken: async () => {
     try {
-      const data = await refreshTokenApi();
+      await refreshTokenApi();
     } catch (error) {
       set({
         user: null,

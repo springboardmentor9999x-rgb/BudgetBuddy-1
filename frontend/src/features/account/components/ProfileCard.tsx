@@ -2,7 +2,7 @@
 
 type UserProfile = {
   full_name: string;
-  monthly_income: number;
+  monthly_income: number | string;
   currency: string;
 };
 

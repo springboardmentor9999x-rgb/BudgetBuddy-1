@@ -1,27 +1,12 @@
 // api.ts
 import axios from "axios";
 import type { AxiosError, InternalAxiosRequestConfig } from "axios";
-import { useAuthStore } from "../store/AuthStore";
+import { useAuthStore } from "../features/auth/store/useAuthStore.ts";
 
 export const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
   withCredentials: true,
 });
-
-// Request interceptor
-api.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
-    const { accessToken } = useAuthStore.getState();
-    // accessToken = getAccessToken();
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-    return config;
-  },
-  async (error: AxiosError) => {
-    return Promise.reject(error);
-  }
-);
 
 // refresh interceptor
 const refreshClient = axios.create({ baseURL: api.defaults.baseURL, withCredentials: true });
@@ -39,11 +24,7 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      const res = await refreshClient.get("/auth/refresh-token");
-      const newAccessToken = res.data.access_token;
-
-      useAuthStore.getState().setAccessToken(newAccessToken);
-      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+      await refreshClient.get("/auth/refresh-token");
       return api.request(originalRequest);
     } catch (err) {
       useAuthStore.getState().logout();

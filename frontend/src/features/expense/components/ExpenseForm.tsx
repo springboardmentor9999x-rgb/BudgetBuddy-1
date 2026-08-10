@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useShallow } from "zustand/shallow";
 import {
   FaSpinner,
   FaTag,
@@ -13,6 +14,7 @@ import {
 } from "react-icons/fa";
 
 import useExpenseStore from "../store/useExpenseStore.ts";
+import useAccountStore from "../../account/store/useAccountStore.ts";
 import type { ExpenseCreate } from "../types/expense.type";
 
 type ExpenseFormProps = {
@@ -23,7 +25,7 @@ type ExpenseFormProps = {
   editingId: number | null;
 };
 
-// Predefined categories – extend this list as needed
+// Predefined categories
 const CATEGORIES = [
   "Food",
   "Transport",
@@ -42,14 +44,36 @@ const ExpenseForm = ({
   editingId,
   formData,
 }: ExpenseFormProps) => {
-
-  // store hooks for adding and updating expenses
+  // Store hooks for adding and updating expenses
   const addNewExpense = useExpenseStore((state) => state.addNewExpense);
   const updateExistingExpense = useExpenseStore(
     (state) => state.updateExistingExpense
   );
 
+  // Bank accounts store hook
+  const { bankAccounts, fetchBankAccounts } = useAccountStore(
+    useShallow((state) => ({
+      bankAccounts: state.bankAccounts,
+      fetchBankAccounts: state.fetchBankAccounts,
+    }))
+  );
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchBankAccounts();
+  }, [fetchBankAccounts]);
+
+  // Set default account selection if empty
+  useEffect(() => {
+    if (!formData.account && bankAccounts.length > 0) {
+      const firstAcc = bankAccounts[0];
+      setFormData((prev) => ({
+        ...prev,
+        account: `${firstAcc.bank_name} (${firstAcc.account_number})`,
+      }));
+    }
+  }, [bankAccounts, formData.account, setFormData]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -58,10 +82,9 @@ const ExpenseForm = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Normalize date for display (keeps existing behavior)
-  if (formData.date) {
-    formData.date = new Date(formData.date).toISOString().split("T")[0];
-  }
+  const formattedDate = formData.date
+    ? new Date(formData.date).toISOString().split("T")[0]
+    : "";
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,12 +93,12 @@ const ExpenseForm = ({
     try {
       const payload = {
         category: formData.category,
-        amount: formData.amount,
+        amount: Number(formData.amount),
         description: formData.description,
         date: new Date(formData.date).toISOString(),
         account: formData.account,
       };
-      // update or create based on editingId
+
       if (editingId !== null) {
         await updateExistingExpense(editingId, payload);
       } else {
@@ -95,7 +118,7 @@ const ExpenseForm = ({
 
   return (
     <>
-      {/* Dark dropdown styles – applies only inside this component */}
+      {/* Dark dropdown styles */}
       <style>{`
         .dark-select option {
           background-color: #1f2937 !important;
@@ -212,28 +235,39 @@ const ExpenseForm = ({
               <input
                 type="date"
                 name="date"
-                value={formData.date}
+                value={formattedDate}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-white transition placeholder-gray-500 scheme-dark"
                 required
               />
             </div>
 
-            {/* Account */}
+            {/* Account – Select Bank Account */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
                 <FaWallet className="inline mr-2 text-purple-400" />
-                Account
+                Bank Account
               </label>
-              <input
-                type="text"
+              <select
                 name="account"
                 value={formData.account}
                 onChange={handleInputChange}
-                placeholder="e.g. Savings"
-                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-white transition placeholder-gray-500"
+                className="dark-select w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-white transition placeholder-gray-500"
                 required
-              />
+              >
+                <option value="" disabled>
+                  Select a bank account
+                </option>
+                {bankAccounts.map((acc) => {
+                  const val = `${acc.bank_name} (${acc.account_number})`;
+                  return (
+                    <option key={acc.id} value={val}>
+                      {acc.bank_name} ({acc.account_number}) — Bal: Rs {Number(acc.balance).toLocaleString("en-IN")}
+                    </option>
+                  );
+                })}
+                <option value="Cash">Cash / Manual Account</option>
+              </select>
             </div>
 
             {/* Buttons */}

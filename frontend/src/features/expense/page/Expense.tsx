@@ -7,6 +7,7 @@ import ExpenseForm from '../components/ExpenseForm.tsx';
 import DeleteConfirm from '../../DeleteConfirm';
 
 import useExpenseStore from '../store/useExpenseStore.ts';
+import useIncomeStore from '../../income/store/useIncomeStore.ts';
 import type { ExpenseCreate, Expense } from '../types/expense.type';
 
 import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
@@ -21,6 +22,14 @@ const ExpensePage = () => {
       expenses: state.expenses,
       fetchExpenses: state.fetchExpenses,
       deleteExistingExpense: state.deleteExistingExpense,
+    }))
+  );
+
+  // ─── Income Store Hooks (for Balance calculation) ────────
+  const { incomes, fetchIncomes } = useIncomeStore(
+    useShallow((state) => ({
+      incomes: state.incomes,
+      fetchIncomes: state.fetchIncomes,
     }))
   );
 
@@ -40,12 +49,15 @@ const ExpensePage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    try {
-      fetchExpenses();
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
-    }
-  }, []);
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchExpenses(), fetchIncomes()]);
+      } catch (error) {
+        console.error('Error fetching expenses or incomes data:', error);
+      }
+    };
+    loadData();
+  }, [fetchExpenses, fetchIncomes]);
 
   const resetForm = () => {
     setFormData({ category: '', amount: 0, description: '', date: new Date().toISOString().split('T')[0], account: '' });
@@ -68,6 +80,43 @@ const ExpensePage = () => {
     setEditingId(expense.id);
     setShowForm(true);
   };
+
+  // ─── Dynamic Summary Card Calculations ───────
+  const totalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalIncome = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const balance = totalIncome - totalExpenses;
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const thisMonthExpenses = expenses
+    .filter((e) => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  const lastMonthExpenses = expenses
+    .filter((e) => {
+      const d = new Date(e.date);
+      return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+    })
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const expenseMoMChange =
+    lastMonthExpenses > 0
+      ? (((thisMonthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100).toFixed(1)
+      : thisMonthExpenses > 0
+      ? '100'
+      : '0';
+
+  const thisYearExpenses = expenses
+    .filter((e) => new Date(e.date).getFullYear() === currentYear)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   // ─── Delete Handlers ───────
   const handleDeleteClick = (id: number) => {
@@ -112,9 +161,12 @@ const ExpensePage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">Total Expenses</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 50,000</p>
-                  <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
-                    <MdTrendingUp className="inline" /> 12% from last month
+                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
+                    Rs {totalExpenses.toLocaleString('en-IN')}
+                  </p>
+                  <p className={`text-xs mt-1 flex items-center gap-1 ${Number(expenseMoMChange) <= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {Number(expenseMoMChange) <= 0 ? <MdTrendingDown className="inline" /> : <MdTrendingUp className="inline" />}
+                    {Number(expenseMoMChange) >= 0 ? '+' : ''}{expenseMoMChange}% from last month
                   </p>
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -128,9 +180,12 @@ const ExpensePage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">Balance</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 5,000</p>
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <MdTrendingDown className="inline" /> 5% from last month
+                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
+                    Rs {balance.toLocaleString('en-IN')}
+                  </p>
+                  <p className={`text-xs mt-1 flex items-center gap-1 ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {balance >= 0 ? <MdTrendingUp className="inline" /> : <MdTrendingDown className="inline" />}
+                    {balance >= 0 ? 'Positive net balance' : 'Negative balance deficit'}
                   </p>
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -144,9 +199,11 @@ const ExpensePage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">This Year</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">Rs 50,000</p>
+                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
+                    Rs {thisYearExpenses.toLocaleString('en-IN')}
+                  </p>
                   <p className="text-blue-400 text-xs mt-1 flex items-center gap-1">
-                    📈 Total income this year
+                    📉 Total expenses this year
                   </p>
                 </div>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -194,7 +251,6 @@ const ExpensePage = () => {
             resetForm={resetForm}
             editingId={editingId}
             formData={formData}
-
           />
         )}
 

@@ -1,14 +1,20 @@
-import { Outlet, Navigate } from "react-router"
-// import { useShallow } from "zustand/shallow";
+import { Navigate, Outlet } from "react-router";
+import { useAuthStore } from "../features/auth/store/useAuthStore.ts";
+import Loading from "../features/Loading.tsx";
 
-import { useAuthStore } from "../store/AuthStore.ts";
-
-export function ProtectedRoute() {
+export default function ProtectedRoute() {
   const user = useAuthStore((state) => state.user);
+  const authInitialized = useAuthStore(
+    (state) => state.authInitialized
+  );
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!authInitialized) {
+    return <Loading />;
+  }
 
-  return (<Outlet />);
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
 }
-
-export default ProtectedRoute;
