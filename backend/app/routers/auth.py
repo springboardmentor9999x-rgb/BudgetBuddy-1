@@ -3,7 +3,7 @@ from fastapi import (
     HTTPException, 
     Response, Cookie
 )
-from fastapi.security import OAuth2PasswordRequestForm
+# from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ from app.core.security import (
 )
 from app.schemas.user import OTPVerification
 from app.core.deps import get_current_user
+from app.schemas.auth import LoginRequest
 
 router = APIRouter()
 
@@ -29,20 +30,25 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     user = create_user(db, user_in.email, user_in.password, user_in.full_name, user_in.monthly_income, user_in.currency)
     return user
 
+# def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session =Depends(get_db), response: Response = None):
 @router.post("/login", response_model=TokenWithUserDetails, status_code=200)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session =Depends(get_db), response: Response = None):
+def login(form_data: LoginRequest, db: Session =Depends(get_db), response: Response = None):
     user = get_user_by_email(db, form_data.username)
     if not user or not verify_password(form_data.password, user.hashed_password) or not user.is_verified:
         raise HTTPException(status_code=401, detail="Invalid credentials or user not verified")
     
-    access_token = create_access_token(data={"sub": user.email, "role": user.role})
+    access_token = create_access_token(data={"sub": user.email, "role": user.role}, expires_delta_in_seconds=60*60*24)  # 1 day
     refresh_token = create_refresh_token(data={"sub": user.email, "role": user.role})
+    
+    # access and refresh tokens are set in cookies
+    response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="strict", max_age=60*60*24)  # 1 day
     response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="strict",max_age=60*60*24*7)  # 7 days
 
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 @router.get("/logout", status_code=200)
 def logout(response: Response):
+    response.delete_cookie(key="access_token")
     response.delete_cookie(key="refresh_token")
     return {"message": "Logged out successfully"}
 
@@ -62,13 +68,14 @@ def verify_otp(otp_verification: OTPVerification, db: Session = Depends(get_db))
     return {"message": "OTP verified successfully"}
 
 @router.get("/refresh-token",response_model=Token, status_code=200)
-def refresh_token(refresh_token: str = Cookie(None)):
+def refresh_token(refresh_token: str = Cookie(None), response: Response = None):
     if not refresh_token:
         raise HTTPException(status_code=404, detail="Refresh token missing")
     
     try:
         payload = verify_refresh_token(refresh_token)
-        access_token = create_access_token(data={"sub": payload["sub"], "role": payload["role"]})
+        access_token = create_access_token(data={"sub": payload["sub"], "role": payload["role"]}, expires_delta_in_seconds=60*60*24)  # 1 day
+        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="strict", max_age=60*60*24)  # 1 day
         return {"access_token": access_token, "token_type": "bearer"}
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")

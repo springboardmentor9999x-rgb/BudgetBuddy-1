@@ -1,12 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
-import uuid
 
 from app.database import Base
-
-def get_uuid():
-    return str(uuid.uuid4())
 
 def get_utc_time_now():
     return datetime.now(timezone.utc)
@@ -26,3 +22,4 @@ class User(Base):
     expenses = relationship("Expense", back_populates="user")
     incomes = relationship("Income", back_populates="user")
     budgets = relationship("Budget", back_populates="user")
+    accounts = relationship("Account", back_populates="user")

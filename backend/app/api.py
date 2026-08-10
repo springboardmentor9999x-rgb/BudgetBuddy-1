@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.routers import (
     auth, expenses, incomes, budgets,
-    accounts
+    accounts, dashboard
 )
 
 
@@ -15,3 +15,4 @@ router.include_router(expenses.router, prefix="/expenses", tags=["expenses"])
 router.include_router(incomes.router, prefix="/incomes", tags=["incomes"])
 router.include_router(budgets.router, prefix="/budgets", tags=["budgets"])
 router.include_router(accounts.router, prefix="/accounts", tags=["accounts"])
+router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])

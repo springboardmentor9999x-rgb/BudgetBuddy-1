@@ -8,7 +8,8 @@ class ExpenseBase(BaseModel):
     amount: float = Field(..., gt=0, description="The amount of the expense, must be greater than 0")
     description: str | None = Field(None, description="An optional description of the expense")
     date: datetime = Field(..., description="The date and time of the expense in ISO 8601 format")
-
+    account: str = Field(..., description="The ID of the account associated with the expense")
+    
 class ExpenseCreate(ExpenseBase):
     pass
 

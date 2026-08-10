@@ -12,18 +12,18 @@ def hash_password(password: str) -> str:
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
-def create_access_token(data: dict, expires_delta: timedelta = None)-> str:
+def create_access_token(data: dict, expires_delta_in_seconds: int = None)-> str:
     """_summary_
 
     Args:
         data (dict): data to encode in the JWT token (e.g., id, email, role)
-        expires_delta (timedelta, optional): The time duration for which the token will be valid. Defaults to None.
+        expires_delta_in_seconds (int, optional): The time duration in seconds for which the token will be valid. Defaults to None.
 
     Returns:
         _str_: The encoded JWT token.
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=Settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (timedelta(seconds=expires_delta_in_seconds) if expires_delta_in_seconds is not None else timedelta(minutes=Settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, Settings.SECRET_KEY, algorithm=Settings.ALGORITHM)
 
