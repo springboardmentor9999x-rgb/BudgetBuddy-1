@@ -4,8 +4,8 @@ from sqlalchemy import select
 
 from app.models.budget import Budget
 
-def create_budget(db: Session, user_id: int, category: str, monthly_limit: float)-> Budget:
-    budget = Budget(user_id=user_id, category=category, monthly_limit=monthly_limit)
+def create_budget(db: Session, user_id: int, category: str, monthly_limit: float, created_at: datetime = None)-> Budget:
+    budget = Budget(user_id=user_id, category=category, monthly_limit=monthly_limit, created_at=created_at)
     db.add(budget)
     db.commit()
     db.refresh(budget)
@@ -39,6 +39,5 @@ def delete_budget(db: Session, budget_id: int, user_id: int)-> dict[str, str] | 
     db.delete(budget)
     db.commit()
     return {
-        "success": True,
         "message": f"Budget with id {budget_id} deleted successfully",
     }
