@@ -30,7 +30,6 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     user = create_user(db, user_in.email, user_in.password, user_in.full_name, user_in.monthly_income, user_in.currency)
     return user
 
-# def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session =Depends(get_db), response: Response = None):
 @router.post("/login", response_model=TokenWithUserDetails, status_code=200)
 def login(form_data: LoginRequest, db: Session =Depends(get_db), response: Response = None):
     user = get_user_by_email(db, form_data.username)
@@ -79,7 +78,3 @@ def refresh_token(refresh_token: str = Cookie(None), response: Response = None):
         return {"access_token": access_token, "token_type": "bearer"}
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
-    
-@router.get("/me", response_model=UserDetails, status_code=200)
-def get_current_user_details(current_user: UserDetails = Depends(get_current_user)):
-    return current_user

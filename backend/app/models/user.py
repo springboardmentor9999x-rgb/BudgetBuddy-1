@@ -18,8 +18,8 @@ class User(Base):
     otp = Column(String(6), nullable=True, default=None)
     created_at = Column(DateTime, default=get_utc_time_now)
     
-    profile = relationship("Profile", back_populates="owner", uselist=False)
-    expenses = relationship("Expense", back_populates="user")
-    incomes = relationship("Income", back_populates="user")
-    budgets = relationship("Budget", back_populates="user")
-    accounts = relationship("Account", back_populates="user")
+    profile = relationship("Profile", back_populates="owner", uselist=False, cascade="all, delete-orphan", passive_deletes=True)
+    expenses = relationship("Expense", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    incomes = relationship("Income", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    budgets = relationship("Budget", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    accounts = relationship("Account", back_populates="user",cascade="all, delete-orphan", passive_deletes=True)

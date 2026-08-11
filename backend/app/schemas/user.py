@@ -23,9 +23,12 @@ class ProfileOut(BaseModel):
 
 class UserDetails(UserOut):
     profile: ProfileOut
-
+    
     model_config = ConfigDict(from_attributes=True)
 
+class UpdateUserProfile(BaseModel):
+    full_name: str | None = None
+    monthly_income: float | None = None
 
 class Token(BaseModel):
     access_token: str

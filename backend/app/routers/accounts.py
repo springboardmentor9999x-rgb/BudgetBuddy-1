@@ -9,7 +9,8 @@ from app.crud.account import (
     create_account, 
     get_account_by_id, 
     delete_account,
-    get_all_user_accounts
+    get_all_user_accounts,
+    get_account_by_user_and_bank_name,
 )
 
 router = APIRouter()
@@ -19,7 +20,11 @@ def create_new_account(
     account_details: CreateBankAccount,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
-):
+):  
+    account_exists = get_account_by_user_and_bank_name(db, current_user.id, account_details.bank_name)
+    if account_exists:
+        raise HTTPException(status_code=400, detail="Account with this bank name already exists for the user")
+    
     account = create_account(db, current_user.id,**account_details.model_dump())
     return account
 
