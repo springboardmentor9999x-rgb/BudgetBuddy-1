@@ -93,6 +93,13 @@ const IncomeForm = ({
     e.preventDefault();
     setIsSubmitting(true);
 
+    const today = new Date().toISOString().split("T")[0];
+    if (formData.date > today) {
+      toast.error("Income date cannot be in the future.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const payload = {
         source: formData.source.trim(),
@@ -220,6 +227,7 @@ const IncomeForm = ({
               <input
                 type="date"
                 name="date"
+                max={new Date().toISOString().split("T")[0]}
                 value={formattedDate}
                 onChange={handleInputChange}
                 className={classStyle}

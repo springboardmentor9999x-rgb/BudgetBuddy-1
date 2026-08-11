@@ -4,9 +4,11 @@ import { Navigate, useNavigate } from "react-router";
 import { useShallow } from "zustand/shallow";
 
 import { useAuthStore } from "./store/useAuthStore";
+import { setPageTitle } from "../../utils/setTitle";
 
 
 export default function OtpVerify() {
+  setPageTitle("Verify OTP | BudgetBuddy");
 
   const [otp, setOtp] = useState("");
   const { email, verifyOtp } = useAuthStore(useShallow((state) => ({

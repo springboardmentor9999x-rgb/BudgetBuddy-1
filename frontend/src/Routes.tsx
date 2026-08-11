@@ -11,6 +11,7 @@ import OtpVerify from "./features/auth/OtpVerify.tsx"
 import AccountPage from "./features/account/page/AccountPage.tsx"
 import NotFound from "./features/NotFound.tsx"
 import Dashboard from "./features/dashboard/page/Dashboard.tsx"
+import RegisterPage from "./features/auth/RegisterPage.tsx"
 
 const router = createBrowserRouter([
   {
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     Component: Auth
+  },
+  {
+    path: "/register",
+    Component: RegisterPage
   },
   {
     path: "/verify-otp",

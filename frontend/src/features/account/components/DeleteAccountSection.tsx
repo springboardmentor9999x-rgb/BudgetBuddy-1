@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
+import toast from 'react-hot-toast';
+
+import useAccountStore from '../store/useAccountStore.ts';
+import {useAuthStore} from '../../auth/store/useAuthStore.ts';
+
 
 
 const DeleteAccountSection = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+
+  const deleteUserAccount = useAccountStore((state) => state.deleteUserAccount);
+  const logout = useAuthStore((state) => state.logout);
 
   const handleDeleteClick = () => {
     setShowConfirmation(true);
@@ -17,11 +25,20 @@ const DeleteAccountSection = () => {
     setConfirmText('');
   };
 
-  const handleConfirmDelete = () => {
-    if (confirmText === 'CONFIRM') {
-      // onDelete(); // Your logic will go here
-      setShowConfirmation(false);
-      setConfirmText('');
+  const handleConfirmDelete = async () => {
+    try {
+      if (confirmText === 'CONFIRM') {
+        // onDelete(); // Your logic will go here
+        await deleteUserAccount();
+        toast.success("Account deleted successfully.");
+        // Optionally, you might want to redirect the user or log them out after deletion
+        setShowConfirmation(false);
+        setConfirmText('');
+        await logout();
+      }
+    } catch (error) {
+      console.error("Error deleting user account:", error);
+      toast.error("Failed to delete account. Please try again.");
     }
   };
 
@@ -44,7 +61,7 @@ const DeleteAccountSection = () => {
 
       {/* Confirmation Modal */}
       {showConfirmation && (
-        <div className="inset-bg-blur"> {/* Using custom utility */ }
+        <div className="inset-bg-blur"> {/* Using custom utility */}
           <div className="bg-[#1e252e] border-2 border-red-500/15 rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-fadeIn">
             {/* Close button (optional) */}
             <button
@@ -81,11 +98,10 @@ const DeleteAccountSection = () => {
               <button
                 onClick={handleConfirmDelete}
                 disabled={confirmText !== 'CONFIRM'}
-                className={`px-5 py-2 rounded-lg flex items-center gap-2 transition text-sm ${
-                  confirmText === 'CONFIRM'
+                className={`px-5 py-2 rounded-lg flex items-center gap-2 transition text-sm ${confirmText === 'CONFIRM'
                     ? 'bg-red-600 hover:bg-red-700 text-white'
                     : 'bg-red-700/40 text-gray-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <FaTrash size={14} />
                 Delete Account

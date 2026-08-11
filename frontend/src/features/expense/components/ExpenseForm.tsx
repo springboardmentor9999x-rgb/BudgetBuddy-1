@@ -90,6 +90,13 @@ const ExpenseForm = ({
     e.preventDefault();
     setIsSubmitting(true);
 
+    // date validation: Ensure the expense date is not in the future
+    const today = new Date().toISOString().split('T')[0];
+    if (formData.date > today) {
+      toast.error('Expense date cannot be in the future.');
+      setIsSubmitting(false);
+      return;
+    }
     try {
       const payload = {
         category: formData.category,
@@ -236,6 +243,7 @@ const ExpenseForm = ({
                 type="date"
                 name="date"
                 value={formattedDate}
+                max={new Date().toISOString().split('T')[0]}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-white transition placeholder-gray-500 scheme-dark"
                 required

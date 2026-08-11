@@ -13,7 +13,7 @@ import type { registerUser } from "../types/auth.type.ts";
 
 type Profile = {
   full_name: string;
-  monthly_income: string;
+  monthly_income: number;
   currency: string;
 };
 

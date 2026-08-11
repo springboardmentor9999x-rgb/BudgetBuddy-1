@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import { useShallow } from "zustand/shallow";
 import {
   FaUser,
@@ -13,6 +13,7 @@ import bbImage from "../../assets/bb.png";
 
 import { useAuthStore } from "./store/useAuthStore.ts";
 import Loading from "../Loading.tsx";
+import { setPageTitle } from "../../utils/setTitle.ts";
 
 
 type LoginFormData = {
@@ -20,13 +21,11 @@ type LoginFormData = {
   password: string;
 };
 
-type setRegisterClickedType = React.Dispatch<React.SetStateAction<boolean>>;
-
 const inputClass = "w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 outline-none transition bg-[rgba(15,20,26,0.7)] border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40";
 const labelClass = "block text-sm font-medium text-gray-300 mb-1.5";
 
-const SigninPage = ({ setRegisterClicked }: { setRegisterClicked: setRegisterClickedType }) => {
-
+const SigninPage = () => {
+  setPageTitle("login | BudgetBuddy");
   const { loading, user, login } = useAuthStore(useShallow((state) => ({
     loading: state.loading,
     user: state.user,
@@ -159,13 +158,12 @@ const SigninPage = ({ setRegisterClicked }: { setRegisterClicked: setRegisterCli
 
               <p className="text-center text-sm text-gray-400 pt-2">
                 Don't have an account?
-                <button
-                  type="button"
-                  onClick={() => setRegisterClicked(true)}
+                <Link
+                  to="/register"
                   className="text-purple-400 hover:text-purple-300 font-medium transition-colors ml-1"
                 >
                   Create one
-                </button>
+                </Link>
               </p>
             </form>
           </div>

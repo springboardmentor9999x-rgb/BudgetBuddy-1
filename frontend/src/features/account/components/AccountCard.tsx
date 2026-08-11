@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 import type { BankAccount } from '../types/account.type.ts';
 import useAccountStore from '../store/useAccountStore.ts';
@@ -12,9 +13,19 @@ const AccountCard = ({ account }: AccountCardProps) => {
   const removeBankAccount = useAccountStore((state) => state.removeBankAccount);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleDelete = () => {
-    removeBankAccount(account.id);
-    setShowConfirm(false);
+  const handleDelete = async () => {
+    try {
+      await removeBankAccount(account.id);
+      toast.success('Bank account removed successfully!');
+      setShowConfirm(false);
+    } catch (error: any) {
+      console.error('Error removing account:', error);
+      const errorMessage =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        'Failed to remove bank account.';
+      toast.error(errorMessage);
+    }
   };
 
   return (

@@ -13,9 +13,12 @@ import type { ExpenseCreate, Expense } from '../types/expense.type';
 import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
 import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
 import Header from '../components/Header.tsx';
+import { setPageTitle } from '../../../utils/setTitle.ts';
 
 
 const ExpensePage = () => {
+
+  setPageTitle("Expenses | BudgetBuddy");
   // ─── Expense Store Hooks ────────
   const { expenses, fetchExpenses, deleteExistingExpense } = useExpenseStore(
     useShallow((state) => ({
@@ -111,8 +114,8 @@ const ExpensePage = () => {
     lastMonthExpenses > 0
       ? (((thisMonthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100).toFixed(1)
       : thisMonthExpenses > 0
-      ? '100'
-      : '0';
+        ? '100'
+        : '0';
 
   const thisYearExpenses = expenses
     .filter((e) => new Date(e.date).getFullYear() === currentYear)
@@ -148,9 +151,9 @@ const ExpensePage = () => {
 
   return (
     <>
-      <div className="flex h-screen background-color font-sans">
+      <div className="flex h-screen background-color font-sans p-4">
         {/* ─── MAIN CONTENT ─────────── */}
-        <main className="flex-1 px-4 md:px-8 py-4 overflow-auto max-width mx-auto">
+        <main className="flex-1 py-4 overflow-auto max-width mx-auto">
           {/* Header */}
           <Header openCreateForm={openCreateForm} />
 

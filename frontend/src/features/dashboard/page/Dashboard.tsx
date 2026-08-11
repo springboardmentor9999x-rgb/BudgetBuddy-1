@@ -191,7 +191,7 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-[#0a0f1a] p-4 md:p-8 font-sans">
       {isLoading && <Loading />}
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-width mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -435,10 +435,6 @@ const Dashboard: React.FC = () => {
               ))
             )}
           </div>
-        </div>
-
-        <div className="mt-8 text-center text-sm text-gray-500 border-t border-white/5 pt-6">
-          <span>Budget Buddy — Dynamic dashboard metrics synced with backend in real-time.</span>
         </div>
       </div>
     </div>

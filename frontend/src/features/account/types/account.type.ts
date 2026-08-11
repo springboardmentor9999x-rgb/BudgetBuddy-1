@@ -1,3 +1,19 @@
+type UserProfile = {
+  full_name: string;
+  monthly_income: number | string;
+  currency: string;
+};
+
+type User = {
+  email: string;
+  role: string;
+  profile: UserProfile | null;
+};
+
+type UpdateUserProfile = {
+  full_name?: string;
+  monthly_income?: number;
+}
 
 interface CreateBankAccountFormData {
   account_number: string;
@@ -9,4 +25,10 @@ interface BankAccount extends CreateBankAccountFormData {
   id: number;
 }
 
-export type { CreateBankAccountFormData, BankAccount };
+interface BankAccountData {
+  account_number: string;
+  bank_name: string;
+  balance: number;
+}
+
+export type { CreateBankAccountFormData, BankAccount, User, UpdateUserProfile, BankAccountData };

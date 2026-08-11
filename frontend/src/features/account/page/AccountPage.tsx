@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { FaUserCircle } from 'react-icons/fa';
 import { RiLinksLine } from 'react-icons/ri';
@@ -10,11 +10,16 @@ import AccountCard from '../components/AccountCard.tsx';
 import ProfileCard from '../components/ProfileCard.tsx';
 import BankAccounts from '../components/BankForm.tsx';
 import DeleteAccountSection from '../components/DeleteAccountSection.tsx';
+import EditProfileForm from '../components/EditProfileForm.tsx';
+import { setPageTitle } from '../../../utils/setTitle.ts';
 
 const AccountPage = () => {
+  setPageTitle("Account | BudgetBuddy");
   const bankAccounts = useAccountStore((state) => state.bankAccounts);
   const fetchBankAccounts = useAccountStore((state) => state.fetchBankAccounts);
   const currentUser = useAuthStore((state) => state.user);
+
+  const [setEditMode, setEditModeState] = useState(false);
 
   // fetches the bank accounts when the component mounts
   useEffect(() => {
@@ -39,13 +44,15 @@ const AccountPage = () => {
           </div>
         </div>
 
-        {/* Profile Card */}
-        <ProfileCard user={displayUser} />
+        {/* Profile Card & Edit Form */}
+        {!setEditMode ? (
+          <ProfileCard user={displayUser} setEditMode={setEditModeState} />
+        ) : (<EditProfileForm user={{ full_name: displayUser.profile?.full_name, monthly_income: displayUser.profile?.monthly_income }} onCancel={() => setEditModeState(false)} />)}
 
         {/* Bank Accounts */}
         <BankAccounts />
 
-        {/* Demo list of bank accounts */}
+        {/* List of bank accounts */}
         <div className="bg-[#1e252e] rounded-2xl shadow-lg border border-white/5 p-4 md:p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <span className='text-lg text-green-500'><RiLinksLine /></span>

@@ -14,8 +14,11 @@ import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
 import { BsGraphUpArrow } from 'react-icons/bs';
 import { GrTransaction } from 'react-icons/gr';
 import { useShallow } from 'zustand/shallow';
+import { setPageTitle } from '../../../utils/setTitle.ts';
 
 const IncomePage = () => {
+
+  setPageTitle("Income | BudgetBuddy");
   // ─── State ────────
   const { incomes, fetchIncomes, deleteIncomeData } = useIncomeStore(
     useShallow((state) => ({
@@ -134,9 +137,9 @@ const IncomePage = () => {
 
   return (
     <>
-      <div className="flex h-screen background-color font-sans">
+      <div className="flex h-screen background-color font-sans p-4">
         {/* ─── MAIN CONTENT ──────────────────────────────────── */}
-        <main className="flex-1 px-4 md:px-8 py-4 overflow-auto max-width mx-auto">
+        <main className="flex-1 py-4 overflow-auto max-width mx-auto">
           {/* Header */}
           <Header openCreateForm={openCreateForm} />
 

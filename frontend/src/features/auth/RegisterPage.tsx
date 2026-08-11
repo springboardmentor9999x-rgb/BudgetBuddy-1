@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import toast from "react-hot-toast";
 import {
@@ -13,8 +13,9 @@ import {
 } from "react-icons/fa";
 import bbImage from "../../assets/bb.png";
 
-import {useAuthStore} from "./store/useAuthStore.ts";
+import { useAuthStore } from "./store/useAuthStore.ts";
 import type { registerUser } from "./types/auth.type";
+import { setPageTitle } from "../../utils/setTitle.ts";
 
 const CURRENCIES = ["INR", "USD", "JPY"];
 
@@ -22,13 +23,8 @@ const CURRENCIES = ["INR", "USD", "JPY"];
 const inputClass = "w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 outline-none transition bg-[rgba(15,20,26,0.7)] border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40";
 const labelClass = "block text-sm font-medium text-gray-300 mb-1.5";
 
-export default function RegisterFormBlock({
-  setRegisterClicked,
-}: {
-  setRegisterClicked: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-
-  
+export default function RegisterFormBlock() {
+  setPageTitle("Register | BudgetBuddy");
   // ---------- State  ----------
   const [registerData, setRegisterData] = useState<registerUser>({
     email: "",
@@ -40,7 +36,7 @@ export default function RegisterFormBlock({
 
   const registerUser = useAuthStore((state) => state.register);
   const navigate = useNavigate();
-  
+
   const [registerError, setRegisterError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -324,14 +320,12 @@ export default function RegisterFormBlock({
               {/* Toggle to sign in */}
               <p className="text-center text-sm text-gray-400 pt-2">
                 Already have an account?
-                <button
-                  disabled={loading}
-                  type="button"
-                  onClick={() => setRegisterClicked(false)}
+                <Link
+                  to="/login"
                   className="text-purple-400 hover:text-purple-300 font-medium transition-colors ml-1"
                 >
                   Sign in
-                </button>
+                </Link>
               </p>
             </form>
           </div>

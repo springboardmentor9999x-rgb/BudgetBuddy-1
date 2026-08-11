@@ -1,5 +1,5 @@
 import { api } from "../../../api/api.ts";
-import type { CreateBankAccountFormData } from "../types/account.type.ts";
+import type { CreateBankAccountFormData, UpdateUserProfile } from "../types/account.type.ts";
 
 async function getBankAccounts() {
   try {
@@ -31,4 +31,24 @@ async function deleteBankAccount(accountId: number) {
   }
 }
 
-export { getBankAccounts, addBankAccount, deleteBankAccount };
+async function updateUserProfile(profileData: UpdateUserProfile) {
+  try {
+    const response = await api.put("/users/update-profile", profileData);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+}
+
+async function deleteUserAccount() {
+  try {
+    const response = await api.delete("/users/delete-account");
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting user account:", error);
+    throw error;
+  }
+}
+
+export { getBankAccounts, addBankAccount, deleteBankAccount, updateUserProfile, deleteUserAccount };
