@@ -6,6 +6,15 @@ from app.database import Base
 
 
 class Account(Base):
+    """_summary_
+
+    Args:
+        id (int): auto-incrementing primary key
+        user_id (int): Foreign key referencing the user who owns the account
+        bank_name (str): The name of the bank where the account is held
+        account_number (str): The account number
+        balance (float): The current balance of the account
+    """
     __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
