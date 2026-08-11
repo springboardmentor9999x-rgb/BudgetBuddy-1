@@ -38,18 +38,18 @@ def create_account(db: Session, user_id: int, bank_name: str, account_number: st
     db.refresh(account)
     return account
 
-def get_account_by_account_number(db: Session, account_number: str) -> Account:
-    """_summary_
-    Args:
-        db (Session): the database session
-        account_number (str): the account number for which to retrieve the account
+# def get_account_by_account_number(db: Session, account_number: str) -> Account:
+#     """_summary_
+#     Args:
+#         db (Session): the database session
+#         account_number (str): the account number for which to retrieve the account
 
-    Returns:
-        Account: get's the account for a given account number
-    """
-    stmt = select(Account).where(Account.account_number == account_number)
-    result = db.execute(stmt).scalars().first()
-    return result
+#     Returns:
+#         Account: get's the account for a given account number
+#     """
+#     stmt = select(Account).where(Account.account_number == account_number)
+#     result = db.execute(stmt).scalars().first()
+#     return result
 
 def get_account_by_id(db: Session, account_id: int, user_id: int) -> Account:
     """_summary_
