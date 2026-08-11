@@ -6,7 +6,9 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.database import Base
-from app.models import *
+from app.models import (
+    user, saving, account, budget, income,expense, profile
+)
 from app.configs.settings import Settings
 
 # this is the Alembic Config object, which provides

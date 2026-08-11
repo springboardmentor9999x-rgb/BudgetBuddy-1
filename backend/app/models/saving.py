@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, ForeignKey, String,DECIMAL
+    Column, Integer, ForeignKey, String,DECIMAL, Date,
 )
 from sqlalchemy.orm import relationship
 
@@ -15,6 +15,7 @@ class SavingsGoal(Base):
         goal_name (str): The name of the savings goal
         target_amount (float): The target amount for the savings goal
         current_amount (float): The current amount saved towards the goal
+        target_date (date): The target date for achieving the savings goal
     """
     __tablename__ = "savings_goals"
 
@@ -26,5 +27,9 @@ class SavingsGoal(Base):
         DECIMAL(12, 2),
         nullable=False,
     )
+    target_date = Column(Date, nullable=False)  # Format: YYYY-MM-DD
 
-    user = relationship("User", back_populates="savings_goals")
+    user = relationship(
+        "User",
+        back_populates="savings_goals",
+    )
