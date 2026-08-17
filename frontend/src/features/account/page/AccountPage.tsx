@@ -33,7 +33,7 @@ const AccountPage = () => {
   };
 
   return (
-    <div className="min-h-screen background-color text-gray-200">
+    <div className="min-h-full background-color text-gray-200">
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">

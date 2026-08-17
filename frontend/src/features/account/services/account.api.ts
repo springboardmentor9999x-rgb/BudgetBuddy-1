@@ -51,4 +51,15 @@ async function deleteUserAccount() {
   }
 }
 
-export { getBankAccounts, addBankAccount, deleteBankAccount, updateUserProfile, deleteUserAccount };
+/** Deduct `amount` from account balance (on saving goal completion). */
+async function deductFromAccount(accountId: number, amount: number) {
+  try {
+    const response = await api.patch(`/accounts/deduct/${accountId}`, { amount });
+    return response.data;
+  } catch (error) {
+    console.error("Error deducting from account:", error);
+    throw error;
+  }
+}
+
+export { getBankAccounts, addBankAccount, deleteBankAccount, updateUserProfile, deleteUserAccount, deductFromAccount };

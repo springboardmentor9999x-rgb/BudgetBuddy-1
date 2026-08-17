@@ -32,6 +32,7 @@ import { GrTransaction } from 'react-icons/gr';
 
 import useDashboardStore from '../store/useDashboardStore.ts';
 import Loading from '../../Loading.tsx';
+import ContentWrapper from '../../../components/ContentWrapper.tsx';
 
 // Register Chart.js modules
 ChartJS.register(
@@ -90,7 +91,7 @@ const doughnutOptions = {
   cutout: '70%',
 };
 
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   const { stats, isLoading, error, fetchDashboardStats } = useDashboardStore();
 
   useEffect(() => {
@@ -188,10 +189,10 @@ const Dashboard: React.FC = () => {
   const transactions = stats?.recent_transactions || [];
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] p-4 md:p-8 font-sans">
+    <ContentWrapper>
       {isLoading && <Loading />}
 
-      <div className="max-width mx-auto">
+      <div className="flex-1 max-width mx-auto w-full">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
@@ -412,8 +413,8 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${tx.amount > 0
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-orange-500/20 text-orange-400'
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-orange-500/20 text-orange-400'
                         }`}
                     >
                       {tx.amount > 0 ? '+' : '-'}
@@ -437,7 +438,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </ContentWrapper>
   );
 };
 

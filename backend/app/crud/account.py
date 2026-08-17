@@ -172,7 +172,8 @@ def subtract_amount_from_account(db: Session, account_id: int, amount: float) ->
     Returns:
         Account: the updated account
     """
-    account = get_account_by_id(db, account_id)
+    stmt = select(Account).where(Account.id == account_id)
+    account = db.execute(stmt).scalars().first()
     if account:
         if account.balance < amount:
             raise ValueError("Insufficient balance in the account")

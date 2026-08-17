@@ -14,6 +14,7 @@ import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
 import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
 import Header from '../components/Header.tsx';
 import { setPageTitle } from '../../../utils/setTitle.ts';
+import ContentWrapper from '../../../components/ContentWrapper.tsx';
 
 
 const ExpensePage = () => {
@@ -151,9 +152,9 @@ const ExpensePage = () => {
 
   return (
     <>
-      <div className="flex h-screen background-color font-sans p-4">
+      <ContentWrapper>
         {/* ─── MAIN CONTENT ─────────── */}
-        <main className="flex-1 py-4 overflow-auto max-width mx-auto">
+        <div className="flex-1 max-width mx-auto w-full">
           {/* Header */}
           <Header openCreateForm={openCreateForm} />
 
@@ -244,7 +245,7 @@ const ExpensePage = () => {
               )}
             </div>
           </div>
-        </main>
+        </div>
 
         {/* ─── MODAL FORM ───────── */}
         {showForm && (
@@ -265,7 +266,7 @@ const ExpensePage = () => {
           message={`Are you sure you want to delete this expense? This action cannot be undone.`}
           isDeleting={isDeleting}
         />
-      </div>
+      </ContentWrapper>
     </>
   );
 };

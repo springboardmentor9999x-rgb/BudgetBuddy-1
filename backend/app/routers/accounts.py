@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field
 
 from app.database import get_db
 from app.core.deps import get_current_user
@@ -11,9 +12,13 @@ from app.crud.account import (
     delete_account,
     get_all_user_accounts,
     get_account_by_user_and_bank_name,
+    subtract_amount_from_account,
 )
 
 router = APIRouter()
+
+class DeductAmountRequest(BaseModel):
+    amount: float = Field(..., gt=0, description="Amount to deduct from the account balance")
 
 @router.post("/add-bank-account", response_model=BankAccountOut, status_code=201)
 def create_new_account(
@@ -46,3 +51,22 @@ def delete_bank_account(account_id: int, db: Session = Depends(get_db), current_
 @router.get("/get-all-accounts", response_model=list[BankAccountOut], status_code=200)
 def get_all_accounts_for_user(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     return get_all_user_accounts(db, current_user.id)
+
+@router.patch("/deduct/{account_id}", response_model=BankAccountOut, status_code=200)
+def deduct_from_account(
+    account_id: int,
+    body: DeductAmountRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Deduct an amount from an account balance (used when a saving goal is completed)."""
+    account = get_account_by_id(db, account_id, current_user.id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    if float(account.balance) < body.amount:
+        raise HTTPException(status_code=400, detail="Insufficient balance in the account")
+    try:
+        updated = subtract_amount_from_account(db, account_id, body.amount)
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

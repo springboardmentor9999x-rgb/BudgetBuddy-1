@@ -46,7 +46,7 @@ def get_saving_goals_by_user(db: Session, user_id: int, skip: int = 0, limit: in
     Returns:
         list[SavingsGoal]: a list of savings goals
     """
-    stmt = select(SavingsGoal).where(SavingsGoal.user_id == user_id).offset(skip).limit(limit)
+    stmt = select(SavingsGoal).where(SavingsGoal.user_id == user_id).order_by(SavingsGoal.target_date.asc()).offset(skip).limit(limit)
     result = db.execute(stmt).scalars().all()
     return result
 

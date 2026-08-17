@@ -6,6 +6,7 @@ import {
   deleteBankAccount,
   updateUserProfile,
   deleteUserAccount,
+  deductFromAccount,
 } from "../services/account.api";
 
 import type {
@@ -23,6 +24,8 @@ interface AccountState {
   removeBankAccount: (accountId: number) => Promise<void>;
   updateUserProfile: (profileData: UpdateUserProfile) => Promise<void>;
   deleteUserAccount: () => Promise<void>;
+  /** Deducts `amount` from the given account and refreshes local state. */
+  deductBalance: (accountId: number, amount: number) => Promise<void>;
 }
 
 const useAccountStore = create<AccountState>((set) => ({
@@ -98,7 +101,6 @@ const useAccountStore = create<AccountState>((set) => ({
     set({ loading: true });
 
     try {
-      // Assuming you have an API function to delete the user account
       await deleteUserAccount();
     } catch (error) {
       console.error("Error deleting user account:", error);
@@ -106,7 +108,17 @@ const useAccountStore = create<AccountState>((set) => ({
     } finally {
       set({ loading: false });
     }
-  }
+  },
+
+  deductBalance: async (accountId, amount) => {
+    const updated = await deductFromAccount(accountId, amount);
+    // Update local balance immediately so UI reflects the change
+    set((state) => ({
+      bankAccounts: state.bankAccounts.map((acc) =>
+        acc.id === accountId ? { ...acc, balance: updated.balance } : acc
+      ),
+    }));
+  },
 }));
 
 export default useAccountStore;
