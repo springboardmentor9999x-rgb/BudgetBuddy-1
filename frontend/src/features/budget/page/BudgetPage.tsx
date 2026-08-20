@@ -80,50 +80,57 @@ const BudgetPage = () => {
     return map;
   }, [expenses, filterMonth, filterYear]);
 
-  // ── Emit overspend notifications ────────────────────────────────────────────
+  // ── Emit overspend notifications with dedupKey (only once per category/month) ──
   useEffect(() => {
+    if (budgets.length === 0 || expenses.length === 0) return;
+
     budgets.forEach((b) => {
       const spent = spendByCategory[b.category] ?? 0;
       const limit = Number(b.monthly_limit);
       const pct = limit > 0 ? (spent / limit) * 100 : 0;
+
       if (spent > limit) {
         addNotification({
           type: 'overspend',
-          title: '⚠️ Budget Exceeded!',
-          message: `You've overspent on "${b.category}" — ₹${spent.toLocaleString('en-IN')} of ₹${limit.toLocaleString('en-IN')} limit.`,
+          title: `⚠️ Budget Exceeded: ${b.category}`,
+          message: `You've spent ₹${spent.toLocaleString('en-IN')} of your ₹${limit.toLocaleString('en-IN')} limit for ${MONTHS[filterMonth]} ${filterYear}.`,
+          dedupKey: `budget:${b.category.toLowerCase()}:${filterYear}-${filterMonth}:exceeded`,
         });
       } else if (pct >= 80) {
         addNotification({
           type: 'overspend',
-          title: '⚡ Budget Warning',
-          message: `"${b.category}" is at ${pct.toFixed(0)}% of monthly limit. ₹${(limit - spent).toLocaleString('en-IN')} remaining.`,
+          title: `⚡ Budget Warning: ${b.category}`,
+          message: `"${b.category}" is at ${pct.toFixed(0)}% of monthly limit. ₹${(limit - spent).toLocaleString('en-IN')} remaining for ${MONTHS[filterMonth]}.`,
+          dedupKey: `budget:${b.category.toLowerCase()}:${filterYear}-${filterMonth}:warning`,
         });
       }
     });
-  }, [budgets, spendByCategory, addNotification]);
+  }, [budgets, spendByCategory, filterMonth, filterYear, addNotification, expenses.length]);
 
-  // ── Filtered budgets by creation month/year ─────────────────────────────────
-  const filteredBudgets = useMemo(() => {
-    return budgets.filter((b) => {
-      const d = new Date(b.created_at);
-      return d.getMonth() === filterMonth && d.getFullYear() === filterYear;
-    });
-  }, [budgets, filterMonth, filterYear]);
+  // ── Display all active budgets evaluating against selected month spending ───
+  const activeBudgets = budgets;
 
-  // ── Summary stats (always across all budgets, for current selected month) ───
-  const totalLimit = budgets.reduce((s, b) => s + Number(b.monthly_limit), 0);
-  const totalSpent = budgets.reduce((s, b) => s + (spendByCategory[b.category] ?? 0), 0);
-  const overspentCount = budgets.filter(
+  // ── Summary stats for selected month ───────────────────────────────────────
+  const totalLimit = activeBudgets.reduce((s, b) => s + Number(b.monthly_limit), 0);
+  const totalSpent = activeBudgets.reduce((s, b) => s + (spendByCategory[b.category] ?? 0), 0);
+  const overspentCount = activeBudgets.filter(
     (b) => (spendByCategory[b.category] ?? 0) > Number(b.monthly_limit)
   ).length;
   const overallPct = totalLimit > 0 ? Math.min(100, (totalSpent / totalLimit) * 100) : 0;
 
-  // ── Unique years from budget creation dates ─────────────────────────────────
+  // ── Unique years from expenses & budgets ───────────────────────────────────
   const yearOptions = useMemo(() => {
-    const yrs = Array.from(new Set(budgets.map((b) => new Date(b.created_at).getFullYear())));
-    if (!yrs.includes(now.getFullYear())) yrs.push(now.getFullYear());
-    return yrs.sort((a, b) => a - b);
-  }, [budgets]);
+    const currentY = now.getFullYear();
+    const yrs = new Set([currentY, currentY - 1, currentY + 1]);
+    budgets.forEach((b) => {
+      if (b.created_at) yrs.add(new Date(b.created_at).getFullYear());
+    });
+    expenses.forEach((e) => {
+      if (e.date) yrs.add(new Date(e.date).getFullYear());
+    });
+    return Array.from(yrs).sort((a, b) => a - b);
+  }, [budgets, expenses]);
+
 
   // ── Open forms ──────────────────────────────────────────────────────────────
   const openCreate = () => {
@@ -284,7 +291,7 @@ const BudgetPage = () => {
               </select>
 
               <span className="ml-auto text-xs text-gray-600">
-                Showing {filteredBudgets.length} / {budgets.length} budgets
+                {activeBudgets.length} active {activeBudgets.length === 1 ? 'budget' : 'budgets'}
               </span>
             </div>
           </div>
@@ -294,29 +301,25 @@ const BudgetPage = () => {
             <div className="flex items-center justify-center py-20">
               <div className="w-10 h-10 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
             </div>
-          ) : filteredBudgets.length === 0 ? (
+          ) : activeBudgets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
               <div className="w-20 h-20 rounded-2xl bg-cyan-500/10 flex items-center justify-center">
                 <RiWalletLine className="text-cyan-400 text-4xl" />
               </div>
               <p className="text-gray-400 text-lg font-semibold">No budgets found</p>
               <p className="text-gray-600 text-sm">
-                {budgets.length === 0
-                  ? 'Create your first budget to track spending.'
-                  : `No budgets created in ${MONTHS[filterMonth]} ${filterYear}.`}
+                Create your first monthly budget to monitor and control your spending.
               </p>
-              {budgets.length === 0 && (
-                <button
-                  onClick={openCreate}
-                  className="mt-2 bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2"
-                >
-                  <FaPlus /> Create First Budget
-                </button>
-              )}
+              <button
+                onClick={openCreate}
+                className="mt-2 bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2"
+              >
+                <FaPlus /> Create First Budget
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filteredBudgets.map((budget) => (
+              {activeBudgets.map((budget) => (
                 <BudgetCard
                   key={budget.id}
                   budget={budget}

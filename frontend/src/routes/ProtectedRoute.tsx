@@ -12,9 +12,9 @@ export default function ProtectedRoute() {
     return <Loading />;
   }
 
-  // if (!user) {
-  //   return <Navigate to="/login" replace />;
-  // }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   return <Outlet />;
 }

@@ -62,4 +62,59 @@ async function deductFromAccount(accountId: number, amount: number) {
   }
 }
 
-export { getBankAccounts, addBankAccount, deleteBankAccount, updateUserProfile, deleteUserAccount, deductFromAccount };
+/** Request a password reset OTP for the currently authenticated user */
+async function requestPasswordResetOtp() {
+  try {
+    const response = await api.post("/users/request-reset-otp");
+    return response.data;
+  } catch (error) {
+    console.error("Error requesting password reset OTP:", error);
+    throw error;
+  }
+}
+
+/** Change or reset password for authenticated user */
+async function changePassword(payload: { current_password?: string; otp?: string; new_password: string }) {
+  try {
+    const response = await api.post("/users/change-password", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error changing password:", error);
+    throw error;
+  }
+}
+
+/** Request password reset OTP via unauthenticated auth route */
+async function forgotPasswordRequest(email: string) {
+  try {
+    const response = await api.post("/auth/request-password-reset", { email });
+    return response.data;
+  } catch (error) {
+    console.error("Error sending forgot password request:", error);
+    throw error;
+  }
+}
+
+/** Reset password via unauthenticated auth route */
+async function forgotPasswordReset(payload: { email: string; otp: string; new_password: string }) {
+  try {
+    const response = await api.post("/auth/reset-password", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    throw error;
+  }
+}
+
+export {
+  getBankAccounts,
+  addBankAccount,
+  deleteBankAccount,
+  updateUserProfile,
+  deleteUserAccount,
+  deductFromAccount,
+  requestPasswordResetOtp,
+  changePassword,
+  forgotPasswordRequest,
+  forgotPasswordReset,
+};

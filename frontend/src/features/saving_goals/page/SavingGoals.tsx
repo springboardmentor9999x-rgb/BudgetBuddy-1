@@ -210,8 +210,10 @@ const SavingGoals = () => {
     });
   }, [goals]);
 
-  // ── Emit notifications when goals change ────────────────────────────────────
+  // ── Emit notifications when goals change (deduplicated by dedupKey) ───────
   useEffect(() => {
+    if (goals.length === 0) return;
+
     goals.forEach((g) => {
       const pct = Number(g.target_amount) > 0
         ? (Number(g.current_amount) / Number(g.target_amount)) * 100
@@ -219,18 +221,21 @@ const SavingGoals = () => {
       if (pct >= 100) {
         addNotification({
           type: 'goal_complete',
-          title: '🏆 Goal Achieved!',
-          message: `"${g.goal_name}" is fully funded! Great work.`,
+          title: `🏆 Goal Achieved: ${g.goal_name}`,
+          message: `"${g.goal_name}" is fully funded (₹${Number(g.current_amount).toLocaleString('en-IN')})! Great work.`,
+          dedupKey: `goal:${g.id}:completed`,
         });
       } else if (pct >= 75) {
         addNotification({
           type: 'goal_near',
-          title: '🔥 Almost There!',
-          message: `"${g.goal_name}" is ${pct.toFixed(0)}% funded — keep it up!`,
+          title: `🔥 Almost There: ${g.goal_name}`,
+          message: `"${g.goal_name}" is ${pct.toFixed(0)}% funded — ₹${(Number(g.target_amount) - Number(g.current_amount)).toLocaleString('en-IN')} to go!`,
+          dedupKey: `goal:${g.id}:near_${Math.floor(pct / 10) * 10}`,
         });
       }
     });
   }, [goals, addNotification]);
+
 
   // ── Dynamic Waterfall Savings Allocation (Shortest Target Date First) ───────
   const totalUserSavings = bankAccounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
