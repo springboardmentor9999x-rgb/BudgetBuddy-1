@@ -1,92 +1,78 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.models.budget import Budget
 
+def get_budget_by_category(db: Session, user_id: int, category: str)-> Budget | None:
+    """Retrieve a budget by category (case-insensitive) for a user."""
+    smt = select(Budget).where(
+        Budget.user_id == user_id,
+        func.lower(Budget.category) == func.lower(category.strip())
+    )
+    return db.execute(smt).scalar()
+
+
 def create_budget(db: Session, user_id: int, category: str, monthly_limit: float, created_at: datetime = None)-> Budget:
-    """_summary_
+    """Create a new budget ensuring no duplicate category exists."""
+    clean_cat = category.strip()
+    if monthly_limit <= 0:
+        raise HTTPException(status_code=400, detail="Monthly limit must be greater than 0")
 
-    Args:
-        db (Session): the database session
-        user_id (int): the ID of the user who owns the budget
-        category (str): the category of the budget
-        monthly_limit (float): the monthly limit for the budget
-        created_at (datetime, optional): the date and time when the budget was created. Defaults to None.
-
-    Returns:
-        Budget: the created budget
-    """
-    budget = Budget(user_id=user_id, category=category, monthly_limit=monthly_limit, created_at=created_at)
+    budget_exists = get_budget_by_category(db, user_id, clean_cat)
+    if budget_exists:
+        raise HTTPException(status_code=400, detail=f"A budget for '{clean_cat}' already exists. Please edit the existing budget.")
+    
+    if created_at is None:
+        created_at = datetime.now(timezone.utc)
+    
+    budget = Budget(user_id=user_id, category=clean_cat, monthly_limit=monthly_limit, created_at=created_at)
     db.add(budget)
     db.commit()
     db.refresh(budget)
     return budget
 
 def get_budget(db: Session, budget_id: int, user_id: int)-> Budget | None:
-    """_summary_
-
-    Args:
-        db (Session): the database session
-        budget_id (int): the ID of the budget to retrieve
-        user_id (int): the ID of the user who owns the budget
-
-    Returns:
-        Budget | None: the retrieved budget or None if not found
-    """
+    """Retrieve a budget by ID for a user."""
     smt = select(Budget).where(Budget.id == budget_id, Budget.user_id == user_id)
     return db.execute(smt).scalar()
 
-def get_budgets_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100)-> list[Budget] | None:
-    """_summary_
-
-    Args:
-        db (Session): the database session
-        user_id (int): the ID of the user for whom to retrieve budgets
-        skip (int, optional): the number of budgets to skip. Defaults to 0.
-        limit (int, optional): the maximum number of budgets to retrieve. Defaults to 100.
-
-    Returns:
-        list[Budget] | None: the list of retrieved budgets or None if not found
-    """
-    smt = select(Budget).where(Budget.user_id == user_id).offset(skip).limit(limit)
+def get_budgets_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100)-> list[Budget]:
+    """Retrieve all budgets for a user."""
+    smt = select(Budget).where(Budget.user_id == user_id).order_by(Budget.created_at.desc()).offset(skip).limit(limit)
     return db.execute(smt).scalars().all()
 
 def update_budget(db: Session, budget_id: int, user_id: int, category: str | None = None, monthly_limit: float | None = None)-> Budget | None:
-    """_summary_
-
-    Args:
-        db (Session): the database session
-        budget_id (int): the ID of the budget to update
-        user_id (int): the ID of the user who owns the budget
-        category (str | None, optional): the new category for the budget. Defaults to None.
-        monthly_limit (float | None, optional): the new monthly limit for the budget. Defaults to None.
-
-    Returns:
-        Budget | None: the updated budget or None if not found
-    """
+    """Update a budget ensuring no collision with other categories."""
     budget = get_budget(db, budget_id, user_id)
     if not budget:
         return None
+
     if category is not None:
-        budget.category = category
+        clean_cat = category.strip()
+        # Check collision with other budgets of this user
+        collision_stmt = select(Budget).where(
+            Budget.user_id == user_id,
+            Budget.id != budget_id,
+            func.lower(Budget.category) == func.lower(clean_cat)
+        )
+        collision = db.execute(collision_stmt).scalar()
+        if collision:
+            raise HTTPException(status_code=400, detail=f"A budget for '{clean_cat}' already exists.")
+        budget.category = clean_cat
+
     if monthly_limit is not None:
+        if monthly_limit <= 0:
+            raise HTTPException(status_code=400, detail="Monthly limit must be greater than 0")
         budget.monthly_limit = monthly_limit
+
     db.commit()
     db.refresh(budget)
     return budget
 
 def delete_budget(db: Session, budget_id: int, user_id: int)-> dict[str, str] | None:
-    """_summary_
-
-    Args:
-        db (Session): the database session
-        budget_id (int): the ID of the budget to delete
-        user_id (int): the ID of the user who owns the budget
-
-    Returns:
-        dict[str, str] | None: a success message or None if not found
-    """
+    """Delete a budget by ID."""
     budget = get_budget(db, budget_id, user_id)
     if not budget:
         return None
