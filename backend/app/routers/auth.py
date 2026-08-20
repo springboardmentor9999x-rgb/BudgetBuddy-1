@@ -18,7 +18,13 @@ from app.core.security import (
 )
 from app.schemas.user import OTPVerification
 from app.core.deps import get_current_user
-from app.schemas.auth import LoginRequest
+from app.schemas.auth import LoginRequest, PasswordResetRequest, PasswordResetConfirm
+from app.crud.user import (
+    get_user_by_email,
+    create_user,
+    generate_and_send_password_reset_otp,
+    reset_user_password,
+)
 
 router = APIRouter()
 
@@ -65,6 +71,23 @@ def verify_otp(otp_verification: OTPVerification, db: Session = Depends(get_db))
     user.otp = None  # Clear the OTP after successful verification
     db.commit()
     return {"message": "OTP verified successfully"}
+
+@router.post("/request-password-reset", status_code=200)
+def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Request a password reset OTP sent to the user's email."""
+    user = get_user_by_email(db, payload.email)
+    if not user:
+        # Prevent email enumeration or give friendly message
+        raise HTTPException(status_code=404, detail="User with this email was not found")
+    
+    generate_and_send_password_reset_otp(db, payload.email)
+    return {"message": "Password reset OTP has been sent to your email"}
+
+@router.post("/reset-password", status_code=200)
+def reset_password(payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+    """Reset password using email, OTP and new password."""
+    reset_user_password(db, payload.email, payload.otp, payload.new_password)
+    return {"message": "Password has been reset successfully"}
 
 @router.get("/refresh-token",response_model=Token, status_code=200)
 def refresh_token(refresh_token: str = Cookie(None), response: Response = None):

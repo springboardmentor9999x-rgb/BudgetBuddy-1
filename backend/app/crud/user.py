@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from app.models import user
 from app.models.user import User
 from app.models.profile import Profile
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 from app.utils.email_service import send_email
 from app.utils.utils import generate_otp
 
@@ -45,8 +46,63 @@ def create_user(db: Session, email: str, password: str, full_name: str, monthly_
     user.otp = otp
     db.commit()
 
-    send_email(otp=otp, recipient_email=email)  # Send the OTP email
+    send_email(otp=otp, recipient_email=email, purpose="verification")  # Send the OTP email
 
+    return user
+
+def generate_and_send_password_reset_otp(db: Session, email: str) -> bool:
+    """Generate password reset OTP and dispatch via email."""
+    user = get_user_by_email(db, email)
+    if not user:
+        # Don't leak user existence directly or raise clean 404
+        return False
+    
+    otp = generate_otp()
+    user.otp = otp
+    db.commit()
+
+    send_email(otp=otp, recipient_email=email, purpose="password_reset")
+    return True
+
+def reset_user_password(db: Session, email: str, otp: str, new_password: str) -> User:
+    """Verify OTP and update user's password."""
+    user = get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User with this email not found")
+    if not user.otp or user.otp.strip() != otp.strip():
+        raise HTTPException(status_code=400, detail="Invalid or expired verification code (OTP)")
+    
+    user.hashed_password = hash_password(new_password)
+    user.otp = None  # Clear OTP after reset
+    db.commit()
+    db.refresh(user)
+    return user
+
+def change_user_password(
+    db: Session,
+    user_id: int,
+    new_password: str,
+    current_password: str | None = None,
+    otp: str | None = None
+) -> User:
+    """Change user password either via current password verification or OTP verification."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if current_password:
+        if not verify_password(current_password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+    elif otp:
+        if not user.otp or user.otp.strip() != otp.strip():
+            raise HTTPException(status_code=400, detail="Invalid or expired verification code (OTP)")
+    else:
+        raise HTTPException(status_code=400, detail="Either current password or verification OTP is required")
+    
+    user.hashed_password = hash_password(new_password)
+    user.otp = None
+    db.commit()
+    db.refresh(user)
     return user
 
 def update_user(db: Session, user_id: int, full_name: str = None, monthly_income: float = None, currency: str = None) -> Profile:
