@@ -16,9 +16,12 @@ import {
 import { useAuthStore } from './auth/store/useAuthStore.ts';
 import toast from 'react-hot-toast';
 import NotificationBell from './notifications/NotificationBell.tsx';
+import { useGlobalNotifications } from './notifications/useGlobalNotifications.ts';
 
 const Navbar = () => {
+  useGlobalNotifications();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const navigate = useNavigate();
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);

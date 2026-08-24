@@ -4,6 +4,7 @@ import {
   getSavingGoalsApi,
   createSavingGoalApi,
   updateSavingGoalApi,
+  contributeToSavingGoalApi,
   deleteSavingGoalApi,
 } from '../services/saving.api';
 
@@ -14,6 +15,7 @@ interface SavingGoalStore {
   fetchGoals: () => Promise<void>;
   addGoal: (data: SavingGoalCreate) => Promise<SavingGoal>;
   updateGoal: (id: number, data: SavingGoalUpdate) => Promise<SavingGoal>;
+  contributeToGoal: (id: number, amount: number, accountId?: number) => Promise<SavingGoal>;
   deleteGoal: (id: number) => Promise<void>;
 
   // Local optimistic helpers
@@ -50,6 +52,17 @@ const useSavingGoalStore = create<SavingGoalStore>((set) => ({
     return updated;
   },
 
+  contributeToGoal: async (id, amount, accountId) => {
+    const updated: SavingGoal = await contributeToSavingGoalApi(id, {
+      amount,
+      account_id: accountId,
+    });
+    set((state) => ({
+      goals: state.goals.map((g) => (g.id === id ? updated : g)),
+    }));
+    return updated;
+  },
+
   deleteGoal: async (id) => {
     await deleteSavingGoalApi(id);
     set((state) => ({ goals: state.goals.filter((g) => g.id !== id) }));
@@ -57,3 +70,4 @@ const useSavingGoalStore = create<SavingGoalStore>((set) => ({
 }));
 
 export default useSavingGoalStore;
+

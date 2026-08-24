@@ -1,4 +1,4 @@
-import { FaEdit, FaTrash, FaFlag, FaTrophy, FaFire } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaFlag, FaTrophy, FaFire, FaPlusCircle } from 'react-icons/fa';
 import type { SavingGoal } from '../types/saving.type';
 
 interface GoalCardProps {
@@ -9,6 +9,7 @@ interface GoalCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onComplete: () => void;
+  onContribute?: () => void;
 }
 
 const progressColor = (pct: number) => {
@@ -23,7 +24,7 @@ const daysLeft = (dateStr: string) => {
   return Math.max(0, Math.ceil(diff / 86400000));
 };
 
-const GoalCard = ({ goal, effectiveSaved, fromPool, isShortestDate, onEdit, onDelete, onComplete }: GoalCardProps) => {
+const GoalCard = ({ goal, effectiveSaved, fromPool, isShortestDate, onEdit, onDelete, onComplete, onContribute }: GoalCardProps) => {
   const target = Number(goal.target_amount);
   const current = effectiveSaved !== undefined ? effectiveSaved : Number(goal.current_amount);
   const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
@@ -32,7 +33,7 @@ const GoalCard = ({ goal, effectiveSaved, fromPool, isShortestDate, onEdit, onDe
   const isComplete = pct >= 100;
 
   return (
-    <div className={`relative group bg-[#1e252e] rounded-2xl border transition-all duration-300 overflow-hidden
+    <div className={`relative group bg-[#1e252e] rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col justify-between
       ${isComplete
         ? 'border-emerald-500/40 shadow-[0_0_24px_rgba(52,211,153,0.12)]'
         : isShortestDate
@@ -117,26 +118,39 @@ const GoalCard = ({ goal, effectiveSaved, fromPool, isShortestDate, onEdit, onDe
 
         {/* Days left chip */}
         {!isComplete && (
-          <div className={`flex items-center gap-1.5 text-xs mb-4 ${days <= 7 ? 'text-amber-400' : 'text-gray-500'}`}>
+          <div className={`flex items-center gap-1.5 text-xs mb-2 ${days <= 7 ? 'text-amber-400' : 'text-gray-500'}`}>
             {days <= 7 && <FaFire size={11} />}
             <span>{days === 0 ? 'Deadline today!' : `${days} day${days !== 1 ? 's' : ''} remaining`}</span>
           </div>
         )}
+      </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
+      {/* Actions Footer */}
+      <div className="p-5 pt-0">
+        <div className="flex flex-wrap items-center gap-2">
+          {!isComplete && onContribute && (
+            <button
+              onClick={onContribute}
+              className="flex-1 text-xs font-bold py-2 px-3 rounded-xl bg-purple-600/25 border border-purple-500/40 hover:bg-purple-600/40 text-purple-200 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md"
+            >
+              <FaPlusCircle size={12} className="text-purple-400" /> Contribute
+            </button>
+          )}
+
           {!isComplete && (
             <button
               onClick={onComplete}
               className="flex-1 text-xs font-semibold py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600/80 to-teal-600/80 hover:from-emerald-500 hover:to-teal-500 text-white transition-all duration-200 shadow-lg shadow-emerald-900/20"
             >
-              ✓ Mark Complete
+              ✓ Complete
             </button>
           )}
+
           <button
             onClick={onEdit}
             className="p-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 transition-all duration-200"
             aria-label="Edit"
+            title="Edit Goal"
           >
             <FaEdit size={13} />
           </button>
@@ -144,6 +158,7 @@ const GoalCard = ({ goal, effectiveSaved, fromPool, isShortestDate, onEdit, onDe
             onClick={onDelete}
             className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-200"
             aria-label="Delete"
+            title="Delete Goal"
           >
             <FaTrash size={13} />
           </button>
@@ -154,3 +169,4 @@ const GoalCard = ({ goal, effectiveSaved, fromPool, isShortestDate, onEdit, onDe
 };
 
 export default GoalCard;
+

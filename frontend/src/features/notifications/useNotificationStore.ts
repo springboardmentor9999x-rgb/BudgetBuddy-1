@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import toast from 'react-hot-toast';
 
 export type NotificationType = 'overspend' | 'goal_complete' | 'goal_near' | 'info';
 
@@ -11,6 +12,10 @@ export interface AppNotification {
   timestamp: string; // ISO string
   read: boolean;
   dedupKey?: string;
+<<<<<<< HEAD
+=======
+  showToast?: boolean;
+>>>>>>> a56ff02 (ui bug fix)
 }
 
 interface NotificationStore {
@@ -36,11 +41,19 @@ export const useNotificationStore = create<NotificationStore>()(
           const existingIndex = list.findIndex((item) => item.dedupKey === n.dedupKey);
           if (existingIndex !== -1) {
             const existing = list[existingIndex];
+<<<<<<< HEAD
             // If message hasn't changed and it's less than 24 hours old, do not spam
             if (existing.message === n.message) {
               return;
             }
             // If message changed (e.g. updated spent amount), update it in place without duplicating
+=======
+            // If message hasn't changed and it's less than 24 hours old, do not duplicate/spam
+            if (existing.message === n.message) {
+              return;
+            }
+            // If message changed (e.g. updated spent amount), update it in place
+>>>>>>> a56ff02 (ui bug fix)
             const updatedList = [...list];
             updatedList[existingIndex] = {
               ...existing,
@@ -50,6 +63,19 @@ export const useNotificationStore = create<NotificationStore>()(
               read: false,
             };
             set({ notifications: updatedList });
+<<<<<<< HEAD
+=======
+
+            if (n.showToast) {
+              if (n.type === 'goal_complete') {
+                toast.success(`${n.title}\n${n.message}`, { id: n.dedupKey, duration: 4000 });
+              } else if (n.type === 'overspend') {
+                toast.error(`${n.title}\n${n.message}`, { id: n.dedupKey, duration: 4000 });
+              } else {
+                toast(`${n.title}\n${n.message}`, { id: n.dedupKey, duration: 4000 });
+              }
+            }
+>>>>>>> a56ff02 (ui bug fix)
             return;
           }
         }
@@ -72,6 +98,16 @@ export const useNotificationStore = create<NotificationStore>()(
         set((state) => ({
           notifications: [newNotif, ...state.notifications].slice(0, 50), // cap at 50
         }));
+
+        if (n.showToast) {
+          if (n.type === 'goal_complete') {
+            toast.success(`${n.title}\n${n.message}`, { id: n.dedupKey, duration: 4000 });
+          } else if (n.type === 'overspend') {
+            toast.error(`${n.title}\n${n.message}`, { id: n.dedupKey, duration: 4000 });
+          } else {
+            toast(`${n.title}\n${n.message}`, { id: n.dedupKey, duration: 4000 });
+          }
+        }
       },
 
       markRead: (id) =>
@@ -99,3 +135,7 @@ export const useNotificationStore = create<NotificationStore>()(
   )
 );
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a56ff02 (ui bug fix)

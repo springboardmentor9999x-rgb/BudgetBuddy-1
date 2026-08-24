@@ -4,6 +4,7 @@ from datetime import date
 from fastapi import HTTPException
 
 from app.models.saving import SavingsGoal
+from app.models.account import Account
 
 def get_saving_goal_by_id(db: Session, user_id: int, goal_id: int) -> SavingsGoal | None:
     stmt = select(SavingsGoal).where(SavingsGoal.user_id == user_id, SavingsGoal.id == goal_id)
@@ -73,6 +74,31 @@ def update_saving_goal(db: Session, goal_id: int, user_id: int, goal_name: str |
     return saving_goal
 
 
+<<<<<<< HEAD
+=======
+def contribute_to_saving_goal(db: Session, user_id: int, goal_id: int, amount: float, account_id: int | None = None) -> SavingsGoal:
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Contribution amount must be greater than 0")
+
+    saving_goal = get_saving_goal_by_id(db, user_id=user_id, goal_id=goal_id)
+    if not saving_goal:
+        raise HTTPException(status_code=404, detail="Saving goal not found")
+
+    # If linked bank account is selected, deduct contribution from the account
+    if account_id is not None:
+        acct_stmt = select(Account).where(Account.id == account_id, Account.user_id == user_id)
+        acct = db.execute(acct_stmt).scalar_one_or_none()
+        if not acct:
+            raise HTTPException(status_code=404, detail="Selected bank account not found")
+        acct.balance = float(acct.balance) - float(amount)
+
+    saving_goal.current_amount = float(saving_goal.current_amount) + float(amount)
+    db.commit()
+    db.refresh(saving_goal)
+    return saving_goal
+
+
+>>>>>>> a56ff02 (ui bug fix)
 def delete_saving_goal(db: Session, user_id: int, goal_id: int) -> bool:
     """_summary_
 

@@ -3,13 +3,14 @@ from sqlalchemy.orm import Session
 
 
 from app.database import get_db
-from app.schemas.saving import SavingGoalCreate, SavingGoalUpdate, SavingGoalResponse
+from app.schemas.saving import SavingGoalCreate, SavingGoalUpdate, SavingGoalResponse, SavingGoalContribution
 from app.crud.saving import (
     get_saving_goal_by_id,
     get_saving_goal_by_user_and_name,
     get_saving_goals_by_user,
     create_saving_goal,
     update_saving_goal,
+    contribute_to_saving_goal,
     delete_saving_goal,
 )
 from app.models.saving import SavingsGoal
@@ -81,6 +82,22 @@ def update_saving_goal_endpoint(
         )
     updated_goal = update_saving_goal(db, goal_id=goal_id, user_id=user.id, **saving_goal_update.model_dump(exclude_unset=True))
     return updated_goal
+
+@router.post("/saving-goals/{goal_id}/contribute", response_model=SavingGoalResponse)
+def contribute_saving_goal_endpoint(
+    goal_id: int,
+    contribution: SavingGoalContribution,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Contribute an amount towards a specific saving goal with optional bank deduction."""
+    return contribute_to_saving_goal(
+        db=db,
+        user_id=user.id,
+        goal_id=goal_id,
+        amount=contribution.amount,
+        account_id=contribution.account_id
+    )
 
 @router.delete("/saving-goals/{goal_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_saving_goal_endpoint(

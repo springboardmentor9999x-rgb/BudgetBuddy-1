@@ -101,6 +101,15 @@ const ExpensePage = () => {
     })
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
+  const thisMonthIncome = incomes
+    .filter((i) => {
+      const d = new Date(i.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const thisMonthNet = thisMonthIncome - thisMonthExpenses;
+
   const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
@@ -118,9 +127,7 @@ const ExpensePage = () => {
         ? '100'
         : '0';
 
-  const thisYearExpenses = expenses
-    .filter((e) => new Date(e.date).getFullYear() === currentYear)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const spendRatio = totalIncome > 0 ? ((totalExpenses / totalIncome) * 100).toFixed(0) : '0';
 
   // ─── Delete Handlers ───────
   const handleDeleteClick = (id: number) => {
@@ -159,63 +166,82 @@ const ExpensePage = () => {
           <Header openCreateForm={openCreateForm} />
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* Total Expenses */}
-            <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-red-500/30 transition-all duration-300 group">
+            <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-rose-500/30 transition-all duration-300 group">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">Total Expenses</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
-                    Rs {totalExpenses.toLocaleString('en-IN')}
+                  <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Total Expenses</p>
+                  <p className="text-xl sm:text-2xl font-extrabold text-rose-400 mt-1.5">
+                    ₹{totalExpenses.toLocaleString('en-IN')}
                   </p>
-                  <p className={`text-xs mt-1 flex items-center gap-1 ${Number(expenseMoMChange) <= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <p className={`text-xs mt-1 flex items-center gap-1 ${Number(expenseMoMChange) <= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {Number(expenseMoMChange) <= 0 ? <MdTrendingDown className="inline" /> : <MdTrendingUp className="inline" />}
-                    {Number(expenseMoMChange) >= 0 ? '+' : ''}{expenseMoMChange}% from last month
+                    {Number(expenseMoMChange) >= 0 ? '+' : ''}{expenseMoMChange}% MoM
                   </p>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <FaWallet className="text-red-400 text-lg sm:text-xl" />
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FaWallet className="text-rose-400 text-lg" />
                 </div>
               </div>
             </div>
 
-            {/* Balance */}
-            <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-green-500/30 transition-all duration-300 group">
+            {/* Net Available Balance */}
+            <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-emerald-500/30 transition-all duration-300 group">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">Balance</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
-                    Rs {balance.toLocaleString('en-IN')}
+                  <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Net Balance</p>
+                  <p className={`text-xl sm:text-2xl font-extrabold mt-1.5 ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    ₹{balance.toLocaleString('en-IN')}
                   </p>
-                  <p className={`text-xs mt-1 flex items-center gap-1 ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <p className={`text-xs mt-1 flex items-center gap-1 ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {balance >= 0 ? <MdTrendingUp className="inline" /> : <MdTrendingDown className="inline" />}
-                    {balance >= 0 ? 'Positive net balance' : 'Negative balance deficit'}
+                    {balance >= 0 ? 'Income surplus' : 'Deficit overspend'}
                   </p>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <FaChartLine className="text-green-400 text-lg sm:text-xl" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FaChartLine className="text-emerald-400 text-lg" />
                 </div>
               </div>
             </div>
 
-            {/* This Year */}
-            <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-blue-500/30 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+            {/* This Month Net */}
+            <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-blue-500/30 transition-all duration-300 group">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">This Year</p>
-                  <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
-                    Rs {thisYearExpenses.toLocaleString('en-IN')}
+                  <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">This Month Net</p>
+                  <p className={`text-xl sm:text-2xl font-extrabold mt-1.5 ${thisMonthNet >= 0 ? 'text-cyan-400' : 'text-rose-400'}`}>
+                    {thisMonthNet >= 0 ? '+' : ''}₹{thisMonthNet.toLocaleString('en-IN')}
                   </p>
-                  <p className="text-blue-400 text-xs mt-1 flex items-center gap-1">
-                    📉 Total expenses this year
+                  <p className="text-xs text-gray-400 mt-1">
+                    ₹{thisMonthIncome.toLocaleString('en-IN')} inc - ₹{thisMonthExpenses.toLocaleString('en-IN')} exp
                   </p>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <FaCalendarAlt className="text-blue-400 text-lg sm:text-xl" />
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FaCalendarAlt className="text-blue-400 text-lg" />
+                </div>
+              </div>
+            </div>
+
+            {/* Expense / Income Absorption */}
+            <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-purple-500/30 transition-all duration-300 group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Income Spent Rate</p>
+                  <p className="text-xl sm:text-2xl font-extrabold text-purple-400 mt-1.5">
+                    {spendRatio}%
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {100 - Number(spendRatio) > 0 ? `${100 - Number(spendRatio)}% saved` : 'Spending >= 100% of income'}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FaWallet className="text-purple-400 text-lg" />
                 </div>
               </div>
             </div>
           </div>
+
 
           {/* Recent Expenses List */}
           <div className="bg-[#1e252e] rounded-xl border border-white/5 overflow-hidden">

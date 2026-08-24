@@ -23,9 +23,11 @@ import type { BankAccount } from '../../account/types/account.type';
 
 import GoalCard from '../components/GoalCard';
 import GoalForm from '../components/GoalForm';
+import ContributeModal from '../components/ContributeModal';
 import DeleteConfirm from '../../DeleteConfirm';
 import ContentWrapper from '../../../components/ContentWrapper';
 import { setPageTitle } from '../../../utils/setTitle';
+
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -158,13 +160,14 @@ const AccountPickerModal = ({ goal, accounts, onConfirm, onCancel, isProcessing 
 const SavingGoals = () => {
   setPageTitle('Saving Goals | BudgetBuddy');
 
-  const { goals, isLoading, fetchGoals, updateGoal, deleteGoal } =
+  const { goals, isLoading, fetchGoals, updateGoal, contributeToGoal, deleteGoal } =
     useSavingGoalStore(
       useShallow((s) => ({
         goals: s.goals,
         isLoading: s.isLoading,
         fetchGoals: s.fetchGoals,
         updateGoal: s.updateGoal,
+        contributeToGoal: s.contributeToGoal,
         deleteGoal: s.deleteGoal,
       }))
     );
@@ -183,6 +186,9 @@ const SavingGoals = () => {
   const [editingGoal, setEditingGoal] = useState<SavingGoal | null>(null);
   const [formData, setFormData] = useState<SavingGoalCreate>(blankForm());
 
+  // Contribute modal
+  const [contributeGoal, setContributeGoal] = useState<SavingGoal | null>(null);
+
   // Delete modal
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -190,6 +196,7 @@ const SavingGoals = () => {
   // Account picker for goal completion
   const [completeGoal, setCompleteGoal] = useState<SavingGoal | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
+
 
   // Filters
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
@@ -371,7 +378,47 @@ const SavingGoals = () => {
     }
   };
 
+  // ── Contribute handler ──────────────────────────────────────────────────────
+  const handleContribute = async (goalId: number, amount: number, accountId?: number) => {
+    const targetGoal = goals.find((g) => g.id === goalId);
+    const prevCurrent = targetGoal ? Number(targetGoal.current_amount) : 0;
+    const targetAmt = targetGoal ? Number(targetGoal.target_amount) : 0;
+
+    await contributeToGoal(goalId, amount, accountId);
+    await fetchGoals();
+    if (accountId) {
+      await fetchBankAccounts();
+    }
+
+    const newCurrent = prevCurrent + amount;
+    const newPct = targetAmt > 0 ? (newCurrent / targetAmt) * 100 : 0;
+    const prevPct = targetAmt > 0 ? (prevCurrent / targetAmt) * 100 : 0;
+
+    if (newPct >= 100 && prevPct < 100) {
+      addNotification({
+        type: 'goal_complete',
+        title: `🏆 Goal Completed: ${targetGoal?.goal_name || 'Goal'}!`,
+        message: `Awesome! "${targetGoal?.goal_name}" is 100% funded (₹${newCurrent.toLocaleString('en-IN')})!`,
+        dedupKey: `goal:${goalId}:completed`,
+        showToast: true,
+      });
+      toast.success(`🎉 Goal Completed! "${targetGoal?.goal_name}" is 100% funded!`);
+    } else if (newPct >= 90 && prevPct < 90) {
+      addNotification({
+        type: 'goal_near',
+        title: `🔥 90% Goal Milestone: ${targetGoal?.goal_name || 'Goal'}!`,
+        message: `"${targetGoal?.goal_name}" reached ${newPct.toFixed(0)}% (₹${newCurrent.toLocaleString('en-IN')}) — ₹${(targetAmt - newCurrent).toLocaleString('en-IN')} remaining!`,
+        dedupKey: `goal:${goalId}:near_90`,
+        showToast: true,
+      });
+      toast.success(`🔥 90% Milestone reached for "${targetGoal?.goal_name}"!`);
+    } else {
+      toast.success(`Contributed ₹${amount.toLocaleString('en-IN')} to "${targetGoal?.goal_name || 'Goal'}"!`);
+    }
+  };
+
   // ── Delete handlers ─────────────────────────────────────────────────────────
+
   const handleDeleteConfirm = async () => {
     if (deleteId === null) return;
     setIsDeleting(true);
@@ -590,6 +637,7 @@ const SavingGoals = () => {
                     onEdit={() => openEdit(goal)}
                     onDelete={() => setDeleteId(goal.id)}
                     onComplete={() => setCompleteGoal(goal)}
+                    onContribute={() => setContributeGoal(goal)}
                   />
                 );
               })}
@@ -597,6 +645,14 @@ const SavingGoals = () => {
           )}
         </div>
       </ContentWrapper>
+
+      {/* ── Contribute Modal ─────────────────────────────────────────────── */}
+      <ContributeModal
+        isOpen={contributeGoal !== null}
+        goal={contributeGoal}
+        onClose={() => setContributeGoal(null)}
+        onContribute={handleContribute}
+      />
 
       {/* ── Account Picker Modal ─────────────────────────────────────────── */}
       {completeGoal && (
@@ -608,6 +664,7 @@ const SavingGoals = () => {
           isProcessing={isCompleting}
         />
       )}
+
 
       {/* ── Goal Form Modal ──────────────────────────────────────────────── */}
       {showForm && (

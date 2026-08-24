@@ -19,7 +19,13 @@ export async function updateSavingGoalApi(goalId: number, data: SavingGoalUpdate
   return response.data;
 }
 
+export async function contributeToSavingGoalApi(goalId: number, data: { amount: number; account_id?: number }) {
+  const response = await api.post(`/savings/saving-goals/${goalId}/contribute`, data);
+  return response.data;
+}
+
 export async function deleteSavingGoalApi(goalId: number) {
   const response = await api.delete(`/savings/saving-goals/${goalId}`);
   return response.data;
 }
+

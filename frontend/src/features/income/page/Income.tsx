@@ -7,20 +7,21 @@ import DeleteConfirm from '../../DeleteConfirm.tsx';
 
 import type { IncomeCreate, Income } from '../types/income.type.ts';
 import useIncomeStore from '../store/useIncomeStore.ts';
+import useExpenseStore from '../../expense/store/useExpenseStore.ts';
 import Header from '../components/Header.tsx';
 
-import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
+import { FaWallet, FaCalendarAlt, FaMinusCircle, FaPiggyBank } from "react-icons/fa";
 import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
-import { BsGraphUpArrow } from 'react-icons/bs';
 import { GrTransaction } from 'react-icons/gr';
 import { useShallow } from 'zustand/shallow';
 import { setPageTitle } from '../../../utils/setTitle.ts';
 import ContentWrapper from '../../../components/ContentWrapper.tsx';
 
+
 const IncomePage = () => {
 
   setPageTitle("Income | BudgetBuddy");
-  // ─── State ────────
+  // ─── Income Store Hooks ────────
   const { incomes, fetchIncomes, deleteIncomeData } = useIncomeStore(
     useShallow((state) => ({
       incomes: state.incomes,
@@ -29,14 +30,22 @@ const IncomePage = () => {
     }))
   );
 
+  // ─── Expense Store Hooks (for Expense Deduction Logic) ────────
+  const { expenses, fetchExpenses } = useExpenseStore(
+    useShallow((state) => ({
+      expenses: state.expenses,
+      fetchExpenses: state.fetchExpenses,
+    }))
+  );
+
   useEffect(() => {
     try {
-      fetchIncomes();
+      Promise.all([fetchIncomes(), fetchExpenses()]);
     } catch (error) {
-      console.error('Failed to fetch incomes:', error);
-      toast.error('Failed to fetch incomes. Please try again.');
+      console.error('Failed to fetch financial data:', error);
+      toast.error('Failed to fetch income data. Please try again.');
     }
-  }, [fetchIncomes]);
+  }, [fetchIncomes, fetchExpenses]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -73,8 +82,10 @@ const IncomePage = () => {
     setShowForm(true);
   };
 
-  // ─── Dynamic Summary Card Calculations ────────
+  // ─── Dynamic Financial Calculations (Expense Deducted from Income) ────────
   const totalIncomes = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const netBalance = totalIncomes - totalExpenses;
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -86,6 +97,15 @@ const IncomePage = () => {
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     })
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const thisMonthExpense = expenses
+    .filter((e) => {
+      const d = new Date(e.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const thisMonthNet = thisMonthIncome - thisMonthExpense;
 
   const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
@@ -104,9 +124,7 @@ const IncomePage = () => {
         ? '100'
         : '0';
 
-  const thisYearIncome = incomes
-    .filter((i) => new Date(i.date).getFullYear() === currentYear)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const retainedRate = totalIncomes > 0 ? Math.max(0, ((netBalance / totalIncomes) * 100)).toFixed(0) : '0';
 
   // ─── Delete Handlers ────────────────────────────────────────────
   const handleDeleteClick = (id: number) => {
@@ -143,63 +161,82 @@ const IncomePage = () => {
         {/* Header */}
         <Header openCreateForm={openCreateForm} />
 
-        {/* Incomes Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          {/* Total Incomes */}
-          <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-green-500/30 transition-all duration-300 group">
+        {/* Incomes Summary Cards (4 Cards with Expense Deduction Logic) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Total Gross Income */}
+          <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-emerald-500/30 transition-all duration-300 group">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">Total Incomes</p>
-                <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
-                  Rs {totalIncomes.toLocaleString('en-IN')}
+                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Gross Income</p>
+                <p className="text-xl sm:text-2xl font-extrabold text-emerald-400 mt-1.5">
+                  ₹{totalIncomes.toLocaleString('en-IN')}
                 </p>
-                <p className={`text-xs mt-1 flex items-center gap-1 ${Number(incomeMoMChange) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`text-xs mt-1 flex items-center gap-1 ${Number(incomeMoMChange) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {Number(incomeMoMChange) >= 0 ? <MdTrendingUp className="inline" /> : <MdTrendingDown className="inline" />}
-                  {Number(incomeMoMChange) >= 0 ? '+' : ''}{incomeMoMChange}% from last month
+                  {Number(incomeMoMChange) >= 0 ? '+' : ''}{incomeMoMChange}% MoM
                 </p>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <FaWallet className="text-green-400 text-lg sm:text-xl" />
-              </div>
-            </div>
-          </div>
-
-          {/* This Month */}
-          <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-blue-500/30 transition-all duration-300 group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">This Month</p>
-                <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
-                  Rs {thisMonthIncome.toLocaleString('en-IN')}
-                </p>
-                <p className="text-blue-400 text-xs mt-1 flex items-center gap-1">
-                  📅 Earnings for current month
-                </p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <FaCalendarAlt className="text-blue-400 text-lg sm:text-xl" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FaWallet className="text-emerald-400 text-lg" />
               </div>
             </div>
           </div>
 
-          {/* This Year */}
-          <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-purple-500/30 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+          {/* Expenses Deducted */}
+          <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-rose-500/30 transition-all duration-300 group">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider">This Year</p>
-                <p className="text-xl sm:text-2xl font-bold text-white mt-1 sm:mt-2">
-                  Rs {thisYearIncome.toLocaleString('en-IN')}
+                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Expenses Deducted</p>
+                <p className="text-xl sm:text-2xl font-extrabold text-rose-400 mt-1.5">
+                  -₹{totalExpenses.toLocaleString('en-IN')}
                 </p>
-                <p className="text-purple-400 text-xs mt-1 flex items-center gap-1">
-                  <BsGraphUpArrow /> Total earnings this year
+                <p className="text-xs text-rose-400/80 mt-1 flex items-center gap-1">
+                  <FaMinusCircle size={10} /> Subtracted from income
                 </p>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <FaChartLine className="text-purple-400 text-lg sm:text-xl" />
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FaMinusCircle className="text-rose-400 text-lg" />
+              </div>
+            </div>
+          </div>
+
+          {/* Net Remaining Income / Balance */}
+          <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-purple-500/30 transition-all duration-300 group">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Net Retained Balance</p>
+                <p className={`text-xl sm:text-2xl font-extrabold mt-1.5 ${netBalance >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
+                  ₹{netBalance.toLocaleString('en-IN')}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {retainedRate}% of income retained
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FaPiggyBank className="text-purple-400 text-lg" />
+              </div>
+            </div>
+          </div>
+
+          {/* This Month Net */}
+          <div className="bg-[#1e252e] rounded-xl shadow-lg p-4 sm:p-5 border border-white/5 hover:border-cyan-500/30 transition-all duration-300 group">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">This Month Net</p>
+                <p className={`text-xl sm:text-2xl font-extrabold mt-1.5 ${thisMonthNet >= 0 ? 'text-cyan-400' : 'text-rose-400'}`}>
+                  {thisMonthNet >= 0 ? '+' : ''}₹{thisMonthNet.toLocaleString('en-IN')}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  ₹{thisMonthIncome.toLocaleString('en-IN')} earned - ₹{thisMonthExpense.toLocaleString('en-IN')} spent
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FaCalendarAlt className="text-cyan-400 text-lg" />
               </div>
             </div>
           </div>
         </div>
+
 
         {/* income list  */}
         <div className="bg-[#1e252e] rounded-xl border border-white/5 overflow-hidden">

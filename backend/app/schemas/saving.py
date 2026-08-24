@@ -21,3 +21,7 @@ class SavingGoalUpdate(BaseModel):
     target_amount: float | None = Field(None, gt=0, description="The target amount for the savings goal")
     current_amount: float | None = Field(None, ge=0, description="The current amount saved towards the goal")
     target_date: date | None = Field(None, description="The target date for achieving the savings goal")
+
+class SavingGoalContribution(BaseModel):
+    amount: float = Field(..., gt=0, description="Amount to contribute to the savings goal")
+    account_id: int | None = Field(None, description="Optional bank account ID to deduct the contribution from")

@@ -19,3 +19,12 @@ export interface SavingGoal extends SavingGoalCreate {
  * SavingGoalUpdate – partial update payload
  */
 export type SavingGoalUpdate = Partial<SavingGoalCreate>;
+
+/**
+ * SavingGoalContribution – payload for contributing funds to a goal
+ */
+export interface SavingGoalContribution {
+  amount: number;
+  account_id?: number;
+}
+
