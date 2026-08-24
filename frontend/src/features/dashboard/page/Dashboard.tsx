@@ -1,10 +1,6 @@
 /**
  * Dashboard Page Component - Verbose Financial Control Center
  *
-<<<<<<< HEAD
- * Displays a clean, simplified financial overview with interactive Month & Year filtering,
- * key summary metrics, visual comparison charts, category breakdowns, and recent transactions.
-=======
  * Displays a comprehensive, multi-widget financial dashboard with:
  * - Interactive Month/Year filtering & Quick Presets
  * - Key Financial Health KPIs (Balance, Gross Income, Expenses Deducted, Net Savings, Savings Rate, Daily Burn Rate, Projections)
@@ -14,7 +10,6 @@
  * - Bank Accounts Liquidity Breakdown
  * - Intelligent Financial Insights & Smart Tips
  * - Searchable & Filterable Recent Activity Stream
->>>>>>> a56ff02 (ui bug fix)
  */
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router';
@@ -39,8 +34,6 @@ import {
   FaFilter,
   FaSyncAlt,
   FaPlus,
-<<<<<<< HEAD
-=======
   FaFire,
   FaTrophy,
   FaLightbulb,
@@ -48,7 +41,6 @@ import {
   FaPlusCircle,
   FaExclamationTriangle,
   FaCheckCircle,
->>>>>>> a56ff02 (ui bug fix)
 } from 'react-icons/fa';
 import { MdTrendingUp, MdTrendingDown } from 'react-icons/md';
 import { GrTransaction } from 'react-icons/gr';
@@ -56,12 +48,6 @@ import { RiBankCardLine, RiWalletLine, RiTargetLine } from 'react-icons/ri';
 import toast from 'react-hot-toast';
 import { useShallow } from 'zustand/shallow';
 
-<<<<<<< HEAD
-import useDashboardStore from '../store/useDashboardStore.ts';
-import Loading from '../../Loading.tsx';
-import ContentWrapper from '../../../components/ContentWrapper.tsx';
-import { setPageTitle } from '../../../utils/setTitle.ts';
-=======
 import useDashboardStore from '../store/useDashboardStore';
 import useBudgetStore from '../../budget/store/useBudgetStore';
 import useSavingGoalStore from '../../saving_goals/store/useSavingGoalStore';
@@ -73,7 +59,6 @@ import ContributeModal from '../../saving_goals/components/ContributeModal';
 import Loading from '../../Loading';
 import ContentWrapper from '../../../components/ContentWrapper';
 import { setPageTitle } from '../../../utils/setTitle';
->>>>>>> a56ff02 (ui bug fix)
 
 // Register Chart.js modules
 ChartJS.register(
@@ -198,9 +183,6 @@ const Dashboard = () => {
     fetchDashboardStats,
   } = useDashboardStore();
 
-<<<<<<< HEAD
-  const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all');
-=======
   const { budgets, fetchBudgets } = useBudgetStore(
     useShallow((s) => ({ budgets: s.budgets, fetchBudgets: s.fetchBudgets }))
   );
@@ -222,7 +204,6 @@ const Dashboard = () => {
   const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [contributeGoal, setContributeGoal] = useState<SavingGoal | null>(null);
->>>>>>> a56ff02 (ui bug fix)
 
   const now = new Date();
   const currentYearNum = now.getFullYear();
@@ -284,8 +265,6 @@ const Dashboard = () => {
     expense_change: 0,
   };
 
-<<<<<<< HEAD
-=======
   // Advanced Financial Calculations
   const savingsRate = userStats.income > 0 ? ((userStats.savings / userStats.income) * 100) : 0;
   const daysInPeriod = selectedMonth ? new Date(selectedYear, selectedMonth, 0).getDate() : 30;
@@ -310,7 +289,6 @@ const Dashboard = () => {
     return { label: 'Deficit Warning', color: 'text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20', desc: `Spending exceeds income by ${formatCurrency(Math.abs(userStats.savings))}.` };
   }, [savingsRate, userStats]);
 
->>>>>>> a56ff02 (ui bug fix)
   // Bar chart data
   const chartLabels = stats?.weekly_overview?.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const chartIncome = stats?.weekly_overview?.income_data || [0, 0, 0, 0, 0, 0, 0];
@@ -320,11 +298,7 @@ const Dashboard = () => {
     labels: chartLabels,
     datasets: [
       {
-<<<<<<< HEAD
-        label: 'Income',
-=======
         label: 'Gross Income',
->>>>>>> a56ff02 (ui bug fix)
         data: chartIncome,
         backgroundColor: 'rgba(16, 185, 129, 0.75)', // emerald
         borderColor: 'rgba(16, 185, 129, 1)',
@@ -332,11 +306,7 @@ const Dashboard = () => {
         borderRadius: 6,
       },
       {
-<<<<<<< HEAD
-        label: 'Expenses',
-=======
         label: 'Expenses Deducted',
->>>>>>> a56ff02 (ui bug fix)
         data: chartExpenses,
         backgroundColor: 'rgba(244, 63, 94, 0.75)', // rose
         borderColor: 'rgba(244, 63, 94, 1)',
@@ -366,14 +336,6 @@ const Dashboard = () => {
     ],
   };
 
-<<<<<<< HEAD
-  // Filtered transactions
-  const transactions = useMemo(() => {
-    const raw = stats?.recent_transactions || [];
-    if (txFilter === 'all') return raw;
-    return raw.filter((t) => t.type === txFilter);
-  }, [stats?.recent_transactions, txFilter]);
-=======
   // Search & Filtered transactions
   const transactions = useMemo(() => {
     let raw = stats?.recent_transactions || [];
@@ -481,7 +443,6 @@ const Dashboard = () => {
         title: `🏆 Goal Achieved: ${targetGoal?.goal_name}!`,
         message: `"${targetGoal?.goal_name}" is 100% funded (${formatCurrency(newCurrent)})!`,
         dedupKey: `goal:${goalId}:completed`,
-        showToast: true,
       });
       toast.success(`🎉 Goal Completed! "${targetGoal?.goal_name}" is 100% funded!`);
     } else if (newPct >= 90 && prevPct < 90) {
@@ -490,14 +451,12 @@ const Dashboard = () => {
         title: `🔥 90% Goal Milestone: ${targetGoal?.goal_name}!`,
         message: `"${targetGoal?.goal_name}" reached ${newPct.toFixed(0)}% (${formatCurrency(newCurrent)})!`,
         dedupKey: `goal:${goalId}:near_90`,
-        showToast: true,
       });
       toast.success(`🔥 90% Milestone reached for "${targetGoal?.goal_name}"!`);
     } else {
       toast.success(`Contributed ${formatCurrency(amount)} to "${targetGoal?.goal_name}"!`);
     }
   };
->>>>>>> a56ff02 (ui bug fix)
 
   const yearOptions = [currentYearNum - 2, currentYearNum - 1, currentYearNum, currentYearNum + 1];
 
@@ -505,22 +464,6 @@ const Dashboard = () => {
     <ContentWrapper>
       {isLoading && <Loading />}
 
-<<<<<<< HEAD
-      <div className="flex-1 max-width mx-auto w-full py-2">
-        {/* ── Top Header & Filter Toolbar ──────────────────────────────── */}
-        <div className="bg-[#1e252e] rounded-2xl border border-white/5 p-4 sm:p-5 mb-6 shadow-xl">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* Title & Period info */}
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-500/15 rounded-xl border border-emerald-500/20">
-                  <FaWallet className="text-xl text-emerald-400" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
-                  <p className="text-xs text-gray-400">
-                    Showing stats for <span className="text-emerald-300 font-semibold">{stats?.monthly_overview?.current_month || 'Current Period'}</span>
-=======
       <div className="flex-1 max-width mx-auto w-full py-2 space-y-6">
         {/* ── 1. Top Header & Interactive Filter Bar ────────────────────────── */}
         <div className="bg-[#1e252e] rounded-2xl border border-white/5 p-4 sm:p-5 shadow-xl">
@@ -536,17 +479,12 @@ const Dashboard = () => {
                   <p className="text-xs text-gray-400">
                     Comprehensive overview for{' '}
                     <span className="text-emerald-300 font-semibold">{stats?.monthly_overview?.current_month || 'Current Period'}</span>
->>>>>>> a56ff02 (ui bug fix)
                   </p>
                 </div>
               </div>
             </div>
 
-<<<<<<< HEAD
-            {/* Filter controls */}
-=======
             {/* Filter controls & Quick Presets */}
->>>>>>> a56ff02 (ui bug fix)
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Presets */}
               <div className="flex bg-[#161c24] p-1 rounded-xl border border-white/5 gap-1">
@@ -614,11 +552,6 @@ const Dashboard = () => {
 
               {/* Refresh Button */}
               <button
-<<<<<<< HEAD
-                onClick={() => fetchDashboardStats()}
-                className="p-2 bg-[#161c24] hover:bg-white/10 text-gray-300 rounded-xl border border-white/5 transition-all"
-                title="Refresh"
-=======
                 onClick={() => {
                   fetchDashboardStats();
                   fetchBudgets();
@@ -628,7 +561,6 @@ const Dashboard = () => {
                 }}
                 className="p-2 bg-[#161c24] hover:bg-white/10 text-gray-300 rounded-xl border border-white/5 transition-all"
                 title="Refresh All"
->>>>>>> a56ff02 (ui bug fix)
               >
                 <FaSyncAlt className={`text-xs ${isLoading ? 'animate-spin' : ''}`} />
               </button>
@@ -637,122 +569,11 @@ const Dashboard = () => {
         </div>
 
         {error && (
-<<<<<<< HEAD
-          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
-=======
           <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
->>>>>>> a56ff02 (ui bug fix)
             {error}
           </div>
         )}
 
-<<<<<<< HEAD
-        {/* ── 4 Simplified KPI Cards ───────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* Total Balance */}
-          <div className="bg-[#1e252e] rounded-2xl p-5 border border-white/5 hover:border-emerald-500/30 transition-all duration-300 group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Total Balance</p>
-                <p className="text-2xl font-extrabold text-white mt-1.5">{formatCurrency(userStats.balance)}</p>
-                <p className="text-xs text-gray-500 mt-1">Across bank accounts</p>
-              </div>
-              <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FaWallet className="text-emerald-400 text-lg" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center text-xs">
-              {userStats.balance_change >= 0 ? (
-                <MdTrendingUp className="text-emerald-400 mr-1 text-sm" />
-              ) : (
-                <MdTrendingDown className="text-rose-400 mr-1 text-sm" />
-              )}
-              <span className={`font-semibold ${userStats.balance_change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {userStats.balance_change >= 0 ? '+' : ''}{userStats.balance_change}%
-              </span>
-              <span className="text-gray-500 ml-1.5">vs previous period</span>
-            </div>
-          </div>
-
-          {/* Income */}
-          <div className="bg-[#1e252e] rounded-2xl p-5 border border-white/5 hover:border-blue-500/30 transition-all duration-300 group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Period Income</p>
-                <p className="text-2xl font-extrabold text-emerald-400 mt-1.5">{formatCurrency(userStats.income)}</p>
-                <p className="text-xs text-gray-500 mt-1">Earned in period</p>
-              </div>
-              <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FaArrowUp className="text-blue-400 text-lg" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center text-xs">
-              {userStats.income_change >= 0 ? (
-                <MdTrendingUp className="text-emerald-400 mr-1 text-sm" />
-              ) : (
-                <MdTrendingDown className="text-rose-400 mr-1 text-sm" />
-              )}
-              <span className={`font-semibold ${userStats.income_change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {userStats.income_change >= 0 ? '+' : ''}{userStats.income_change}%
-              </span>
-              <span className="text-gray-500 ml-1.5">vs previous period</span>
-            </div>
-          </div>
-
-          {/* Expenses */}
-          <div className="bg-[#1e252e] rounded-2xl p-5 border border-white/5 hover:border-rose-500/30 transition-all duration-300 group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Period Expenses</p>
-                <p className="text-2xl font-extrabold text-rose-400 mt-1.5">{formatCurrency(userStats.expenses)}</p>
-                <p className="text-xs text-gray-500 mt-1">Spent in period</p>
-              </div>
-              <div className="w-11 h-11 rounded-xl bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FaArrowDown className="text-rose-400 text-lg" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center text-xs">
-              {userStats.expense_change <= 0 ? (
-                <MdTrendingDown className="text-emerald-400 mr-1 text-sm" />
-              ) : (
-                <MdTrendingUp className="text-rose-400 mr-1 text-sm" />
-              )}
-              <span className={`font-semibold ${userStats.expense_change <= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {userStats.expense_change >= 0 ? '+' : ''}{userStats.expense_change}%
-              </span>
-              <span className="text-gray-500 ml-1.5">vs previous period</span>
-            </div>
-          </div>
-
-          {/* Net Savings */}
-          <div className="bg-[#1e252e] rounded-2xl p-5 border border-white/5 hover:border-purple-500/30 transition-all duration-300 group">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Net Savings</p>
-                <p className={`text-2xl font-extrabold mt-1.5 ${userStats.savings >= 0 ? 'text-purple-400' : 'text-rose-400'}`}>
-                  {formatCurrency(userStats.savings)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {userStats.income > 0
-                    ? `${Math.max(0, Math.round((userStats.savings / userStats.income) * 100))}% saved`
-                    : 'Savings rate'}
-                </p>
-              </div>
-              <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FaPiggyBank className="text-purple-400 text-lg" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-center text-xs">
-              {userStats.monthly_change >= 0 ? (
-                <MdTrendingUp className="text-emerald-400 mr-1 text-sm" />
-              ) : (
-                <MdTrendingDown className="text-rose-400 mr-1 text-sm" />
-              )}
-              <span className={`font-semibold ${userStats.monthly_change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {userStats.monthly_change >= 0 ? '+' : ''}{userStats.monthly_change}%
-              </span>
-              <span className="text-gray-500 ml-1.5">vs previous period</span>
-=======
         {/* ── 2. Financial Health Banner & Burn Rate Status ─────────────────── */}
         <div className={`p-4 rounded-2xl border ${healthStatus.bg} flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg`}>
           <div className="flex items-center gap-3">
@@ -780,15 +601,10 @@ const Dashboard = () => {
             <div className="text-right border-l border-white/10 pl-4">
               <span className="text-gray-400 text-[10px] uppercase">Month-End Pace</span>
               <p className="font-bold text-rose-400">{formatCurrency(projectedMonthExpenses)}</p>
->>>>>>> a56ff02 (ui bug fix)
             </div>
           </div>
         </div>
 
-<<<<<<< HEAD
-        {/* ── 2 Main Charts ────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-=======
         {/* ── 3. Verbose KPI Metrics Row (4 Cards) ─────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Net Total Balance */}
@@ -898,20 +714,13 @@ const Dashboard = () => {
 
         {/* ── 4. Main Charts Section ────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
->>>>>>> a56ff02 (ui bug fix)
           {/* Income vs Expenses Bar Chart */}
           <div className="lg:col-span-2 bg-[#1e252e] rounded-2xl shadow-lg p-5 sm:p-6 border border-white/5">
             <div className="flex items-center justify-between mb-4">
               <div>
-<<<<<<< HEAD
-                <h3 className="font-bold text-white text-base">Income vs Expenses</h3>
-                <p className="text-xs text-gray-400">
-                  {selectedMonth === null ? '12-Month distribution' : 'Weekly breakdown for period'}
-=======
                 <h3 className="font-bold text-white text-base">Income vs Expenses Distribution</h3>
                 <p className="text-xs text-gray-400">
                   {selectedMonth === null ? '12-Month period trend' : 'Weekly cash flow for selected period'}
->>>>>>> a56ff02 (ui bug fix)
                 </p>
               </div>
               <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
@@ -950,37 +759,6 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
-<<<<<<< HEAD
-          </div>
-        </div>
-
-        {/* ── Recent Transactions Section ──────────────────────────────── */}
-        <div className="bg-[#1e252e] rounded-2xl border border-white/5 overflow-hidden shadow-lg mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-4 border-b border-white/5 bg-[#1a2128] gap-3">
-            <div className="flex items-center gap-2">
-              <GrTransaction className="text-purple-400" />
-              <h3 className="font-bold text-white text-base">Transactions in Period</h3>
-              <span className="text-xs text-gray-400 bg-white/5 px-2.5 py-0.5 rounded-full">
-                {transactions.length} items
-              </span>
-            </div>
-
-            {/* Filter by Income / Expense */}
-            <div className="flex gap-1 bg-[#161c24] p-1 rounded-xl border border-white/5 self-start sm:self-auto">
-              {(['all', 'income', 'expense'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTxFilter(t)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
-                    txFilter === t
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-=======
           </div>
         </div>
 
@@ -1337,22 +1115,15 @@ const Dashboard = () => {
                   </button>
                 ))}
               </div>
->>>>>>> a56ff02 (ui bug fix)
             </div>
           </div>
 
           <div className="divide-y divide-white/5">
             {transactions.length === 0 ? (
               <div className="px-6 py-12 text-center text-gray-400 text-sm">
-<<<<<<< HEAD
-                <p className="font-medium text-gray-300">No transactions found for this period.</p>
-                <p className="text-gray-500 text-xs mt-1">
-                  Add income or expense transactions to populate your dashboard!
-=======
                 <p className="font-medium text-gray-300">No transactions found for this query.</p>
                 <p className="text-gray-500 text-xs mt-1">
                   Try clearing the search query or adding a new transaction.
->>>>>>> a56ff02 (ui bug fix)
                 </p>
                 <div className="flex justify-center gap-3 mt-4">
                   <Link
@@ -1386,11 +1157,7 @@ const Dashboard = () => {
                     <div>
                       <p className="font-semibold text-sm text-gray-200">{tx.description}</p>
                       <p className="text-[11px] text-gray-400">
-<<<<<<< HEAD
-                        {tx.category} • {formatDate(tx.date)} • {tx.account}
-=======
                         <span className="font-medium text-gray-300">{tx.category}</span> • {formatDate(String(tx.date))} • <span className="text-gray-400 font-mono">{tx.account}</span>
->>>>>>> a56ff02 (ui bug fix)
                       </p>
                     </div>
                   </div>
