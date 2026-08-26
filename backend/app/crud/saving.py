@@ -74,8 +74,6 @@ def update_saving_goal(db: Session, goal_id: int, user_id: int, goal_name: str |
     return saving_goal
 
 
-<<<<<<< HEAD
-=======
 def contribute_to_saving_goal(db: Session, user_id: int, goal_id: int, amount: float, account_id: int | None = None) -> SavingsGoal:
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Contribution amount must be greater than 0")
@@ -98,7 +96,6 @@ def contribute_to_saving_goal(db: Session, user_id: int, goal_id: int, amount: f
     return saving_goal
 
 
->>>>>>> a56ff02 (ui bug fix)
 def delete_saving_goal(db: Session, user_id: int, goal_id: int) -> bool:
     """_summary_
 
