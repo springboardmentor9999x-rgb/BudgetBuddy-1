@@ -76,7 +76,7 @@ export const useNotificationStore = create<NotificationStore>()(
 
         const newNotif: AppNotification = {
           ...n,
-          id: crypto.randomUUID(),
+          id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
           timestamp: new Date().toISOString(),
           read: false,
         };

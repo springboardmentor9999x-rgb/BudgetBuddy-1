@@ -52,7 +52,6 @@ import useDashboardStore from '../store/useDashboardStore';
 import useBudgetStore from '../../budget/store/useBudgetStore';
 import useSavingGoalStore from '../../saving_goals/store/useSavingGoalStore';
 import useAccountStore from '../../account/store/useAccountStore';
-import { useNotificationStore } from '../../notifications/useNotificationStore';
 import type { SavingGoal } from '../../saving_goals/types/saving.type';
 
 import ContributeModal from '../../saving_goals/components/ContributeModal';
@@ -198,8 +197,6 @@ const Dashboard = () => {
   const { bankAccounts, fetchBankAccounts } = useAccountStore(
     useShallow((s) => ({ bankAccounts: s.bankAccounts, fetchBankAccounts: s.fetchBankAccounts }))
   );
-
-  const addNotification = useNotificationStore((s) => s.addNotification);
 
   const [txFilter, setTxFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -438,20 +435,8 @@ const Dashboard = () => {
     const prevPct = targetAmt > 0 ? (prevCurrent / targetAmt) * 100 : 0;
 
     if (newPct >= 100 && prevPct < 100) {
-      addNotification({
-        type: 'goal_complete',
-        title: `🏆 Goal Achieved: ${targetGoal?.goal_name}!`,
-        message: `"${targetGoal?.goal_name}" is 100% funded (${formatCurrency(newCurrent)})!`,
-        dedupKey: `goal:${goalId}:completed`,
-      });
       toast.success(`🎉 Goal Completed! "${targetGoal?.goal_name}" is 100% funded!`);
     } else if (newPct >= 90 && prevPct < 90) {
-      addNotification({
-        type: 'goal_near',
-        title: `🔥 90% Goal Milestone: ${targetGoal?.goal_name}!`,
-        message: `"${targetGoal?.goal_name}" reached ${newPct.toFixed(0)}% (${formatCurrency(newCurrent)})!`,
-        dedupKey: `goal:${goalId}:near_90`,
-      });
       toast.success(`🔥 90% Milestone reached for "${targetGoal?.goal_name}"!`);
     } else {
       toast.success(`Contributed ${formatCurrency(amount)} to "${targetGoal?.goal_name}"!`);

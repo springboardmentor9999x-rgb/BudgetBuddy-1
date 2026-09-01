@@ -8,17 +8,19 @@ import {
   FaChartPie,
   FaFilter,
   FaExclamationTriangle,
+  FaCrown,
 } from 'react-icons/fa';
-import { RiWalletLine } from 'react-icons/ri';
+import { RiWalletLine, RiVipCrownLine } from 'react-icons/ri';
 
 import useBudgetStore from '../store/useBudgetStore';
 import useExpenseStore from '../../expense/store/useExpenseStore';
-import { useNotificationStore } from '../../notifications/useNotificationStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 import type { Budget, BudgetCreate } from '../types/budget.type';
 
 import BudgetCard from '../components/BudgetCard';
 import BudgetForm from '../components/BudgetForm';
 import DeleteConfirm from '../../DeleteConfirm';
+import UpgradeModal from '../../../components/UpgradeModal';
 import ContentWrapper from '../../../components/ContentWrapper';
 import { setPageTitle } from '../../../utils/setTitle';
 
@@ -49,9 +51,10 @@ const BudgetPage = () => {
     useShallow((s) => ({ expenses: s.expenses, fetchExpenses: s.fetchExpenses }))
   );
 
-  const addNotification = useNotificationStore((s) => s.addNotification);
+  const user = useAuthStore((s) => s.user);
 
   const [showForm, setShowForm] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [formData, setFormData] = useState<BudgetCreate>(blankForm());
 
@@ -80,33 +83,6 @@ const BudgetPage = () => {
     return map;
   }, [expenses, filterMonth, filterYear]);
 
-  // ── Emit overspend notifications with dedupKey (only once per category/month) ──
-  useEffect(() => {
-    if (budgets.length === 0 || expenses.length === 0) return;
-
-    budgets.forEach((b) => {
-      const spent = spendByCategory[b.category] ?? 0;
-      const limit = Number(b.monthly_limit);
-      const pct = limit > 0 ? (spent / limit) * 100 : 0;
-
-      if (spent > limit) {
-        addNotification({
-          type: 'overspend',
-          title: `⚠️ Budget Exceeded: ${b.category}`,
-          message: `You've spent ₹${spent.toLocaleString('en-IN')} of your ₹${limit.toLocaleString('en-IN')} limit for ${MONTHS[filterMonth]} ${filterYear}.`,
-          dedupKey: `budget:${b.category.toLowerCase()}:${filterYear}-${filterMonth}:exceeded`,
-        });
-      } else if (pct >= 80) {
-        addNotification({
-          type: 'overspend',
-          title: `⚡ Budget Warning: ${b.category}`,
-          message: `"${b.category}" is at ${pct.toFixed(0)}% of monthly limit. ₹${(limit - spent).toLocaleString('en-IN')} remaining for ${MONTHS[filterMonth]}.`,
-          dedupKey: `budget:${b.category.toLowerCase()}:${filterYear}-${filterMonth}:warning`,
-        });
-      }
-    });
-  }, [budgets, spendByCategory, filterMonth, filterYear, addNotification, expenses.length]);
-
   // ── Display all active budgets evaluating against selected month spending ───
   const activeBudgets = budgets;
 
@@ -117,6 +93,9 @@ const BudgetPage = () => {
     (b) => (spendByCategory[b.category] ?? 0) > Number(b.monthly_limit)
   ).length;
   const overallPct = totalLimit > 0 ? Math.min(100, (totalSpent / totalLimit) * 100) : 0;
+
+  const isBasicUser = user?.role === 'user';
+  const isAtBasicLimit = isBasicUser && budgets.length >= 3;
 
   // ── Unique years from expenses & budgets ───────────────────────────────────
   const yearOptions = useMemo(() => {
@@ -131,9 +110,12 @@ const BudgetPage = () => {
     return Array.from(yrs).sort((a, b) => a - b);
   }, [budgets, expenses]);
 
-
   // ── Open forms ──────────────────────────────────────────────────────────────
   const openCreate = () => {
+    if (isAtBasicLimit) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setEditingBudget(null);
     setFormData(blankForm());
     setShowForm(true);
@@ -172,9 +154,20 @@ const BudgetPage = () => {
                 <RiWalletLine className="text-2xl sm:text-3xl text-cyan-400" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Budgets
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                    Budgets
+                  </h1>
+                  {isBasicUser ? (
+                    <span className="text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
+                      Basic Plan (Max 3)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <RiVipCrownLine /> Premium (Unlimited)
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">
                   Set monthly limits. Monitor your spending.
                 </p>
@@ -183,7 +176,7 @@ const BudgetPage = () => {
 
             <button
               onClick={openCreate}
-              className="group relative bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-2 overflow-hidden w-full sm:w-auto justify-center"
+              className="group relative bg-linear-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-2 overflow-hidden w-full sm:w-auto justify-center cursor-pointer"
             >
               <div className="absolute inset-0 bg-linear-to-r from-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <FaPlus className="text-sm sm:text-base group-hover:rotate-90 transition-transform duration-300" />
@@ -191,6 +184,29 @@ const BudgetPage = () => {
               <span className="absolute inset-0 rounded-xl bg-white/10 scale-0 group-hover:scale-100 transition-transform duration-500" />
             </button>
           </div>
+
+          {/* ── Basic Tier Alert Banner (if at limit) ── */}
+          {isAtBasicLimit && (
+            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#1e252e] to-transparent border border-amber-500/30 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400 text-lg">
+                  <FaCrown />
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Basic Tier Limit Reached (3 / 3 Budgets)</h4>
+                  <p className="text-xs text-gray-400">
+                    Upgrade to Premium to track unlimited categories with advanced financial insights.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all shrink-0 cursor-pointer"
+              >
+                Upgrade to Premium
+              </button>
+            </div>
+          )}
 
           {/* ── Summary Cards ───────────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -231,8 +247,12 @@ const BudgetPage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Active Budgets</p>
-                  <p className="text-2xl font-bold text-white mt-2">{budgets.length}</p>
-                  <p className="text-purple-400 text-xs mt-1">categories tracked</p>
+                  <p className="text-2xl font-bold text-white mt-2">
+                    {budgets.length} {isBasicUser ? '/ 3' : ''}
+                  </p>
+                  <p className="text-purple-400 text-xs mt-1">
+                    {isBasicUser ? 'Basic plan limit' : 'unlimited tracking'}
+                  </p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <FaChartPie className="text-purple-400 text-xl" />
@@ -272,7 +292,7 @@ const BudgetPage = () => {
               <select
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(Number(e.target.value))}
-                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
                 style={{ colorScheme: 'dark' }}
               >
                 {MONTHS.map((m, i) => (
@@ -284,7 +304,7 @@ const BudgetPage = () => {
               <select
                 value={filterYear}
                 onChange={(e) => setFilterYear(Number(e.target.value))}
-                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
+                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
                 style={{ colorScheme: 'dark' }}
               >
                 {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -312,7 +332,7 @@ const BudgetPage = () => {
               </p>
               <button
                 onClick={openCreate}
-                className="mt-2 bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                className="mt-2 bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer"
               >
                 <FaPlus /> Create First Budget
               </button>
@@ -342,6 +362,14 @@ const BudgetPage = () => {
           onClose={() => setShowForm(false)}
         />
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        title="Unlimited Category Budgets"
+        reason="Basic users are limited to 3 active budgets. Upgrade to Premium for unlimited category budgets and real-time health tracking."
+      />
 
       <DeleteConfirm
         isOpen={deleteId !== null}

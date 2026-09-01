@@ -1,5 +1,5 @@
 import { api } from "../../../api/api";
-import type { registerUser } from "../types/auth.type";
+import type { registerUser, UserRole } from "../types/auth.type";
 
 async function loginApi(email: string, password: string) {
   const response = await api.post("/auth/login", { username: email, password });
@@ -31,11 +31,17 @@ async function getUserProfileApi() {
   return response.data;
 }
 
+async function upgradeTierApi(tier: UserRole) {
+  const response = await api.post("/users/upgrade-tier", { tier });
+  return response.data;
+}
+
 export {
   loginApi,
   registerApi,
   verifyOtpApi,
   refreshTokenApi,
   logoutApi,
-  getUserProfileApi
+  getUserProfileApi,
+  upgradeTierApi,
 };

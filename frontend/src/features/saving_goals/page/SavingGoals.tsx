@@ -11,13 +11,14 @@ import {
   FaTimes,
   FaWallet,
   FaSpinner,
+  FaCrown,
 } from 'react-icons/fa';
-import { RiTargetLine } from 'react-icons/ri';
+import { RiTargetLine, RiVipCrownLine } from 'react-icons/ri';
 
 import useSavingGoalStore from '../store/useSavingGoalStore';
 import useAccountStore from '../../account/store/useAccountStore';
 import useExpenseStore from '../../expense/store/useExpenseStore';
-import { useNotificationStore } from '../../notifications/useNotificationStore';
+import { useAuthStore } from '../../auth/store/useAuthStore';
 import type { SavingGoal, SavingGoalCreate } from '../types/saving.type';
 import type { BankAccount } from '../../account/types/account.type';
 
@@ -25,6 +26,7 @@ import GoalCard from '../components/GoalCard';
 import GoalForm from '../components/GoalForm';
 import ContributeModal from '../components/ContributeModal';
 import DeleteConfirm from '../../DeleteConfirm';
+import UpgradeModal from '../../../components/UpgradeModal';
 import ContentWrapper from '../../../components/ContentWrapper';
 import { setPageTitle } from '../../../utils/setTitle';
 
@@ -69,7 +71,7 @@ const AccountPickerModal = ({ goal, accounts, onConfirm, onCancel, isProcessing 
             <h2 className="text-xl font-bold text-white">Complete Goal</h2>
             <p className="text-gray-400 text-xs">"{goal.goal_name}"</p>
           </div>
-          <button onClick={onCancel} className="ml-auto text-gray-500 hover:text-white transition-colors">
+          <button onClick={onCancel} className="ml-auto text-gray-500 hover:text-white transition-colors cursor-pointer">
             <FaTimes size={18} />
           </button>
         </div>
@@ -93,7 +95,7 @@ const AccountPickerModal = ({ goal, accounts, onConfirm, onCancel, isProcessing 
                   key={acc.id}
                   onClick={() => enough && setSelectedId(acc.id)}
                   disabled={!enough}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer
                     ${selectedId === acc.id
                       ? 'border-emerald-500/50 bg-emerald-500/10 ring-1 ring-emerald-500/30'
                       : enough
@@ -135,7 +137,7 @@ const AccountPickerModal = ({ goal, accounts, onConfirm, onCancel, isProcessing 
           <button
             onClick={() => selectedId && onConfirm(selectedId)}
             disabled={!selectedId || !hasEnough || isProcessing || accounts.length === 0}
-            className="flex-1 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30"
+            className="flex-1 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30 cursor-pointer"
           >
             {isProcessing ? (
               <><FaSpinner className="animate-spin" /> Processing...</>
@@ -146,7 +148,7 @@ const AccountPickerModal = ({ goal, accounts, onConfirm, onCancel, isProcessing 
           <button
             onClick={onCancel}
             disabled={isProcessing}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-xl transition-all duration-200"
+            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 cursor-pointer"
           >
             Cancel
           </button>
@@ -179,10 +181,11 @@ const SavingGoals = () => {
     }))
   );
 
+  const user = useAuthStore((s) => s.user);
   const addNewExpense = useExpenseStore((s) => s.addNewExpense);
-  const addNotification = useNotificationStore((s) => s.addNotification);
 
   const [showForm, setShowForm] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingGoal | null>(null);
   const [formData, setFormData] = useState<SavingGoalCreate>(blankForm());
 
@@ -197,7 +200,6 @@ const SavingGoals = () => {
   const [completeGoal, setCompleteGoal] = useState<SavingGoal | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
 
-
   // Filters
   const [filterMonth, setFilterMonth] = useState<number | null>(null);
   const [filterYear, setFilterYear] = useState<number | null>(null);
@@ -208,6 +210,9 @@ const SavingGoals = () => {
     fetchBankAccounts();
   }, [fetchGoals, fetchBankAccounts]);
 
+  const isBasicUser = user?.role === 'user';
+  const isAtBasicLimit = isBasicUser && goals.length >= 2;
+
   // ── Always sort goals by shortest target date first ─────────────────────────
   const sortedGoals = useMemo(() => {
     return [...goals].sort((a, b) => {
@@ -216,32 +221,6 @@ const SavingGoals = () => {
       return timeA - timeB;
     });
   }, [goals]);
-
-  // ── Emit notifications when goals change (deduplicated by dedupKey) ───────
-  useEffect(() => {
-    if (goals.length === 0) return;
-
-    goals.forEach((g) => {
-      const pct = Number(g.target_amount) > 0
-        ? (Number(g.current_amount) / Number(g.target_amount)) * 100
-        : 0;
-      if (pct >= 100) {
-        addNotification({
-          type: 'goal_complete',
-          title: `🏆 Goal Achieved: ${g.goal_name}`,
-          message: `"${g.goal_name}" is fully funded (₹${Number(g.current_amount).toLocaleString('en-IN')})! Great work.`,
-          dedupKey: `goal:${g.id}:completed`,
-        });
-      } else if (pct >= 75) {
-        addNotification({
-          type: 'goal_near',
-          title: `🔥 Almost There: ${g.goal_name}`,
-          message: `"${g.goal_name}" is ${pct.toFixed(0)}% funded — ₹${(Number(g.target_amount) - Number(g.current_amount)).toLocaleString('en-IN')} to go!`,
-          dedupKey: `goal:${g.id}:near_${Math.floor(pct / 10) * 10}`,
-        });
-      }
-    });
-  }, [goals, addNotification]);
 
 
   // ── Dynamic Waterfall Savings Allocation (Shortest Target Date First) ───────
@@ -319,6 +298,10 @@ const SavingGoals = () => {
 
   // ── Open forms ──────────────────────────────────────────────────────────────
   const openCreate = () => {
+    if (isAtBasicLimit) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setEditingGoal(null);
     setFormData(blankForm());
     setShowForm(true);
@@ -346,8 +329,6 @@ const SavingGoals = () => {
         ? `${selectedAcc.bank_name} (${selectedAcc.account_number})`
         : 'Cash';
 
-      // 1. Create a new Expense transaction titled "Achieved goal purchase: <goal_name>"
-      // Creating this expense automatically deducts the amount from the bank account balance in backend DB
       await addNewExpense({
         category: 'Shopping',
         amount: amount,
@@ -356,18 +337,10 @@ const SavingGoals = () => {
         account: accountLabel,
       });
 
-      // 2. Set current_amount = target_amount on the goal in DB
       await updateGoal(completeGoal.id, { current_amount: amount });
-
-      // 3. Re-fetch bank accounts and goals to ensure total sync
       await fetchBankAccounts();
       await fetchGoals();
 
-      addNotification({
-        type: 'goal_complete',
-        title: '🏆 Goal Completed!',
-        message: `"${completeGoal.goal_name}" complete! Expense "Achieved goal purchase: ${completeGoal.goal_name}" created & ₹${amount.toLocaleString('en-IN')} deducted from ${selectedAcc?.bank_name ?? 'bank account'}.`,
-      });
       toast.success(`"Achieved goal purchase: ${completeGoal.goal_name}" created & ₹${amount.toLocaleString('en-IN')} deducted!`);
       setCompleteGoal(null);
     } catch (err: unknown) {
@@ -395,22 +368,8 @@ const SavingGoals = () => {
     const prevPct = targetAmt > 0 ? (prevCurrent / targetAmt) * 100 : 0;
 
     if (newPct >= 100 && prevPct < 100) {
-      addNotification({
-        type: 'goal_complete',
-        title: `🏆 Goal Completed: ${targetGoal?.goal_name || 'Goal'}!`,
-        message: `Awesome! "${targetGoal?.goal_name}" is 100% funded (₹${newCurrent.toLocaleString('en-IN')})!`,
-        dedupKey: `goal:${goalId}:completed`,
-        showToast: true,
-      });
       toast.success(`🎉 Goal Completed! "${targetGoal?.goal_name}" is 100% funded!`);
     } else if (newPct >= 90 && prevPct < 90) {
-      addNotification({
-        type: 'goal_near',
-        title: `🔥 90% Goal Milestone: ${targetGoal?.goal_name || 'Goal'}!`,
-        message: `"${targetGoal?.goal_name}" reached ${newPct.toFixed(0)}% (₹${newCurrent.toLocaleString('en-IN')}) — ₹${(targetAmt - newCurrent).toLocaleString('en-IN')} remaining!`,
-        dedupKey: `goal:${goalId}:near_90`,
-        showToast: true,
-      });
       toast.success(`🔥 90% Milestone reached for "${targetGoal?.goal_name}"!`);
     } else {
       toast.success(`Contributed ₹${amount.toLocaleString('en-IN')} to "${targetGoal?.goal_name || 'Goal'}"!`);
@@ -418,7 +377,6 @@ const SavingGoals = () => {
   };
 
   // ── Delete handlers ─────────────────────────────────────────────────────────
-
   const handleDeleteConfirm = async () => {
     if (deleteId === null) return;
     setIsDeleting(true);
@@ -445,9 +403,20 @@ const SavingGoals = () => {
                 <RiTargetLine className="text-2xl sm:text-3xl text-purple-400" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Saving Goals
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                    Saving Goals
+                  </h1>
+                  {isBasicUser ? (
+                    <span className="text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
+                      Basic Plan (Max 2)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <RiVipCrownLine /> Premium (Unlimited)
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">
                   Set targets. Track progress. Achieve milestones.
                 </p>
@@ -456,7 +425,7 @@ const SavingGoals = () => {
 
             <button
               onClick={openCreate}
-              className="group relative bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-2 overflow-hidden w-full sm:w-auto justify-center"
+              className="group relative bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all duration-300 flex items-center gap-2 overflow-hidden w-full sm:w-auto justify-center cursor-pointer"
             >
               <div className="absolute inset-0 bg-linear-to-r from-purple-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <FaPlus className="text-sm sm:text-base group-hover:rotate-90 transition-transform duration-300" />
@@ -464,6 +433,29 @@ const SavingGoals = () => {
               <span className="absolute inset-0 rounded-xl bg-white/10 scale-0 group-hover:scale-100 transition-transform duration-500" />
             </button>
           </div>
+
+          {/* ── Basic Tier Alert Banner (if at limit) ── */}
+          {isAtBasicLimit && (
+            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-[#1e252e] to-transparent border border-amber-500/30 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400 text-lg">
+                  <FaCrown />
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Basic Tier Limit Reached (2 / 2 Goals)</h4>
+                  <p className="text-xs text-gray-400">
+                    Upgrade to Premium to track unlimited saving targets and milestone predictions.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all shrink-0 cursor-pointer"
+              >
+                Upgrade to Premium
+              </button>
+            </div>
+          )}
 
           {/* ── Summary Cards ───────────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -507,8 +499,12 @@ const SavingGoals = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Active Goals</p>
-                  <p className="text-2xl font-bold text-white mt-2">{goals.length - completedCount}</p>
-                  <p className="text-purple-400 text-xs mt-1">in progress</p>
+                  <p className="text-2xl font-bold text-white mt-2">
+                    {goals.length - completedCount} {isBasicUser ? '/ 2' : ''}
+                  </p>
+                  <p className="text-purple-400 text-xs mt-1">
+                    {isBasicUser ? 'Basic plan limit' : 'in progress'}
+                  </p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <FaFlag className="text-purple-400 text-xl" />
@@ -544,7 +540,7 @@ const SavingGoals = () => {
                   <button
                     key={s}
                     onClick={() => setFilterStatus(s)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all duration-200 ${
+                    className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all duration-200 cursor-pointer ${
                       filterStatus === s
                         ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
                         : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
@@ -559,7 +555,7 @@ const SavingGoals = () => {
               <select
                 value={filterMonth ?? ''}
                 onChange={(e) => setFilterMonth(e.target.value === '' ? null : Number(e.target.value))}
-                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
                 style={{ colorScheme: 'dark' }}
               >
                 <option value="">All Months</option>
@@ -572,7 +568,7 @@ const SavingGoals = () => {
               <select
                 value={filterYear ?? ''}
                 onChange={(e) => setFilterYear(e.target.value === '' ? null : Number(e.target.value))}
-                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                className="bg-[#161c24] border border-white/10 text-gray-300 text-xs rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-purple-500 transition-all cursor-pointer"
                 style={{ colorScheme: 'dark' }}
               >
                 <option value="">All Years</option>
@@ -582,7 +578,7 @@ const SavingGoals = () => {
               {(filterMonth !== null || filterYear !== null || filterStatus !== 'all') && (
                 <button
                   onClick={() => { setFilterMonth(null); setFilterYear(null); setFilterStatus('all'); }}
-                  className="text-xs text-gray-500 hover:text-rose-400 transition-colors"
+                  className="text-xs text-gray-500 hover:text-rose-400 transition-colors cursor-pointer"
                 >
                   ✕ Clear filters
                 </button>
@@ -613,7 +609,7 @@ const SavingGoals = () => {
               {goals.length === 0 && (
                 <button
                   onClick={openCreate}
-                  className="mt-2 bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                  className="mt-2 bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 cursor-pointer"
                 >
                   <FaPlus /> Create First Goal
                 </button>
@@ -665,7 +661,6 @@ const SavingGoals = () => {
         />
       )}
 
-
       {/* ── Goal Form Modal ──────────────────────────────────────────────── */}
       {showForm && (
         <GoalForm
@@ -676,6 +671,14 @@ const SavingGoals = () => {
           onClose={() => setShowForm(false)}
         />
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        title="Unlimited Saving Goals"
+        reason="Basic plan allows up to 2 active savings goals. Upgrade to Premium for unlimited goal tracking and automated waterfall allocation."
+      />
 
       <DeleteConfirm
         isOpen={deleteId !== null}

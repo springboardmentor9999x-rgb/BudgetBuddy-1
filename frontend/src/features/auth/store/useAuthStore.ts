@@ -7,22 +7,10 @@ import {
   registerApi,
   verifyOtpApi,
   getUserProfileApi,
+  upgradeTierApi,
 } from "../services/auth.api.ts";
 
-import type { registerUser } from "../types/auth.type.ts";
-
-type Profile = {
-  full_name: string;
-  monthly_income: number;
-  currency: string;
-};
-
-type User = {
-  id: string;
-  email: string;
-  role: string;
-  profile: Profile;
-};
+import type { registerUser, User, UserRole } from "../types/auth.type.ts";
 
 type AuthStore = {
   user: User | null;
@@ -39,6 +27,7 @@ type AuthStore = {
   refreshToken: () => Promise<void>;
   logout: () => Promise<void>;
   getUserProfile: () => Promise<void>;
+  upgradeTier: (tier: UserRole) => Promise<void>;
 };
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -148,6 +137,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
       });
 
       throw error;
+    }
+  },
+
+  upgradeTier: async (tier: UserRole) => {
+    set({ loading: true });
+    try {
+      const updatedUser = await upgradeTierApi(tier);
+      set({ user: updatedUser });
+    } finally {
+      set({ loading: false });
     }
   },
 }));
