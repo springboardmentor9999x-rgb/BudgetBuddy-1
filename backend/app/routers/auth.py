@@ -26,6 +26,7 @@ from app.crud.user import (
     create_user,
     generate_and_send_password_reset_otp,
     reset_user_password,
+    resend_verification_otp,
 )
 
 router = APIRouter()
@@ -140,6 +141,22 @@ def verify_otp(otp_verification: OTPVerification, db: Session = Depends(get_db))
         status_str="SUCCESS"
     )
     return {"message": "OTP verified successfully"}
+
+
+@router.post("/resend-otp", status_code=200)
+def resend_otp(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Resend a new verification OTP to the unverified user's email."""
+    user = get_user_by_email(db, payload.email)
+    if not user:
+        raise HTTPException(status_code=404, detail="Account not found with this email")
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Account is already verified. Please sign in.")
+    
+    success = resend_verification_otp(db, payload.email)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to resend verification code")
+    
+    return {"message": "Verification code resent successfully"}
 
 
 @router.post("/request-password-reset", status_code=200)

@@ -25,7 +25,7 @@ const inputClass = "w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 
 const labelClass = "block text-sm font-medium text-gray-300 mb-1.5";
 
 const SigninPage = () => {
-  setPageTitle("login | BudgetBuddy");
+  setPageTitle("Sign In | BudgetBuddy");
   const { loading, user, login } = useAuthStore(useShallow((state) => ({
     loading: state.loading,
     user: state.user,
@@ -59,12 +59,17 @@ const SigninPage = () => {
         navigate('/dashboard')
       }, 500)
     } catch (error: any) {
-      if (error?.status === 401) {
+      const detail = error?.response?.data?.detail;
+      if (detail) {
+        toast.error(detail);
+        return;
+      }
+      if (error?.status === 401 || error?.response?.status === 401) {
         toast.error("Invalid username or password.");
         return;
       }
       console.error("Login error:", error);
-      toast.error("Failed to login.");
+      toast.error("Failed to login. Please try again.");
     }
   };
 

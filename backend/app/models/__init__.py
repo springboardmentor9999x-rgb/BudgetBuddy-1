@@ -6,6 +6,7 @@ from .budget import Budget
 from .account import Account
 from .saving import SavingsGoal
 from .audit_log import AuditLog
+from .subscription import SubscriptionRequest
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "Account",
     "SavingsGoal",
     "AuditLog",
+    "SubscriptionRequest",
 ]

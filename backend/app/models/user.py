@@ -34,4 +34,5 @@ class User(Base):
     budgets = relationship("Budget", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
     accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
     savings_goals = relationship("SavingsGoal", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
+    subscription_requests = relationship("SubscriptionRequest", foreign_keys="SubscriptionRequest.user_id", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
     audit_logs = relationship("AuditLog", back_populates="user")

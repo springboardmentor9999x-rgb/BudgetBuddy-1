@@ -36,10 +36,16 @@ async function upgradeTierApi(tier: UserRole) {
   return response.data;
 }
 
+async function resendOtpApi(email: string) {
+  const response = await api.post("/auth/resend-otp", { email });
+  return response.data;
+}
+
 export {
   loginApi,
   registerApi,
   verifyOtpApi,
+  resendOtpApi,
   refreshTokenApi,
   logoutApi,
   getUserProfileApi,

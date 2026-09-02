@@ -95,7 +95,7 @@ const BudgetPage = () => {
   const overallPct = totalLimit > 0 ? Math.min(100, (totalSpent / totalLimit) * 100) : 0;
 
   const isBasicUser = user?.role === 'user';
-  const isAtBasicLimit = isBasicUser && budgets.length >= 3;
+  const isAtBasicLimit = isBasicUser && budgets.length >= 5;
 
   // ── Unique years from expenses & budgets ───────────────────────────────────
   const yearOptions = useMemo(() => {
@@ -160,7 +160,7 @@ const BudgetPage = () => {
                   </h1>
                   {isBasicUser ? (
                     <span className="text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
-                      Basic Plan (Max 3)
+                      Basic Plan (Max 5)
                     </span>
                   ) : (
                     <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
@@ -193,7 +193,7 @@ const BudgetPage = () => {
                   <FaCrown />
                 </span>
                 <div>
-                  <h4 className="text-xs font-bold text-white">Basic Tier Limit Reached (3 / 3 Budgets)</h4>
+                  <h4 className="text-xs font-bold text-white">Basic Tier Limit Reached (5 / 5 Budgets)</h4>
                   <p className="text-xs text-gray-400">
                     Upgrade to Premium to track unlimited categories with advanced financial insights.
                   </p>
@@ -248,7 +248,7 @@ const BudgetPage = () => {
                 <div>
                   <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Active Budgets</p>
                   <p className="text-2xl font-bold text-white mt-2">
-                    {budgets.length} {isBasicUser ? '/ 3' : ''}
+                    {budgets.length} {isBasicUser ? '/ 5' : ''}
                   </p>
                   <p className="text-purple-400 text-xs mt-1">
                     {isBasicUser ? 'Basic plan limit' : 'unlimited tracking'}

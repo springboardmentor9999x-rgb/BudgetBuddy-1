@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   RiFileExcel2Line,
   RiFilePdfLine,
   RiFilter3Line,
   RiCalendarEventLine,
+  RiVipCrownLine,
 } from 'react-icons/ri';
 import { useReportStore } from '../store/useReportStore.ts';
+import { useAuthStore } from '../../auth/store/useAuthStore.ts';
+import UpgradeModal from '../../../components/UpgradeModal.tsx';
 
 const MONTH_NAMES = [
   { value: 1, label: 'January' },
@@ -44,6 +47,11 @@ export const ReportFilters: React.FC = () => {
     isLoading,
     reportData,
   } = useReportStore();
+
+  const user = useAuthStore((s) => s.user);
+  const isBasic = user?.role === 'user';
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState('');
 
   const availableYears = reportData?.available_years?.length
     ? reportData.available_years
@@ -93,24 +101,38 @@ export const ReportFilters: React.FC = () => {
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
-            onClick={exportPdf}
+            onClick={() => {
+              if (isBasic) {
+                setUpgradeReason('Exporting the full financial summary report is an exclusive Premium feature. Basic users can export transactions in the table below.');
+                setShowUpgradeModal(true);
+                return;
+              }
+              exportPdf();
+            }}
             disabled={isExportingPdf || isLoading}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-rose-100 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.15)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:scale-100"
-            title="Download Comprehensive PDF Report with Summary & Transactions"
+            title={isBasic ? "Full Financial Summary PDF (Premium Exclusive)" : "Download Comprehensive PDF Report with Summary"}
           >
-            <RiFilePdfLine className="text-rose-400 text-base" />
-            {isExportingPdf ? 'Generating PDF...' : 'Download PDF (.pdf)'}
+            {isBasic ? <RiVipCrownLine className="text-amber-400 text-base" /> : <RiFilePdfLine className="text-rose-400 text-base" />}
+            {isExportingPdf ? 'Generating PDF...' : isBasic ? 'Summary PDF (Premium)' : 'Download PDF (.pdf)'}
           </button>
 
           <button
             type="button"
-            onClick={exportExcel}
+            onClick={() => {
+              if (isBasic) {
+                setUpgradeReason('Exporting the 4-sheet multi-tab Excel financial workbook is an exclusive Premium feature. Basic users can export transactions in the table below.');
+                setShowUpgradeModal(true);
+                return;
+              }
+              exportExcel('summary');
+            }}
             disabled={isExportingExcel || isLoading}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-emerald-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 shadow-[0_0_15px_rgba(16,185,129,0.25)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:scale-100"
-            title="Download Comprehensive Excel (.xlsx) Report with All Sheets"
+            title={isBasic ? "Full Financial Summary Excel Workbook (Premium Exclusive)" : "Download Comprehensive Excel (.xlsx) Report with All Sheets"}
           >
-            <RiFileExcel2Line className="text-base" />
-            {isExportingExcel ? 'Generating Sheet...' : 'Download Excel (.xlsx)'}
+            {isBasic ? <RiVipCrownLine className="text-amber-950 text-base" /> : <RiFileExcel2Line className="text-base" />}
+            {isExportingExcel ? 'Generating Sheet...' : isBasic ? 'Summary Excel (Premium)' : 'Download Excel (.xlsx)'}
           </button>
         </div>
       </div>
@@ -263,6 +285,13 @@ export const ReportFilters: React.FC = () => {
           </button>
         </div>
       </form>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        title="Full Financial Summary Export"
+        reason={upgradeReason}
+      />
     </div>
   );
 };

@@ -64,6 +64,18 @@ def generate_and_send_password_reset_otp(db: Session, email: str) -> bool:
     send_email(otp=otp, recipient_email=email, purpose="password_reset")
     return True
 
+def resend_verification_otp(db: Session, email: str) -> bool:
+    """Generate and send a new email verification OTP for an unverified user."""
+    user = get_user_by_email(db, email)
+    if not user or user.is_verified:
+        return False
+    
+    otp = generate_otp()
+    user.otp = otp
+    db.commit()
+    send_email(otp=otp, recipient_email=email, purpose="verification")
+    return True
+
 def reset_user_password(db: Session, email: str, otp: str, new_password: str) -> User:
     """Verify OTP and update user's password."""
     user = get_user_by_email(db, email)

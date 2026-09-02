@@ -87,15 +87,15 @@ def test_permission_matrix_admin():
 def test_check_tier_limit_basic_user():
     user = User(id=1, email="user@test.com", role="user")
 
-    # Under budget limit (limit is 3)
+    # Under budget limit (limit is 5)
     check_tier_limit(user, "budget", current_count=0)
-    check_tier_limit(user, "budget", current_count=2)
+    check_tier_limit(user, "budget", current_count=4)
 
     # At or above budget limit
     with pytest.raises(HTTPException) as exc:
-        check_tier_limit(user, "budget", current_count=3)
+        check_tier_limit(user, "budget", current_count=5)
     assert exc.value.status_code == 403
-    assert "Basic tier limit reached (3 budgets)" in exc.value.detail
+    assert "Basic tier limit reached (5 budgets)" in exc.value.detail
 
     # Under savings goal limit (limit is 2)
     check_tier_limit(user, "saving_goal", current_count=0)

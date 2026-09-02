@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
+from sqlalchemy.exc import IntegrityError
+
 from app.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
@@ -13,6 +15,7 @@ from app.crud.account import (
     delete_account,
     get_all_user_accounts,
     get_account_by_user_and_bank_name,
+    get_account_by_user_bank_and_number,
     subtract_amount_from_account,
 )
 from app.core.authorization import (
@@ -34,12 +37,24 @@ def create_new_account(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.ACCOUNT_WRITE_OWN))
 ):  
-    account_exists = get_account_by_user_and_bank_name(db, current_user.id, account_details.bank_name)
+    account_exists = get_account_by_user_bank_and_number(
+        db, current_user.id, account_details.bank_name, account_details.account_number
+    )
     if account_exists:
-        raise HTTPException(status_code=400, detail="Account with this bank name already exists for the user")
+        raise HTTPException(
+            status_code=400,
+            detail=f"An account for {account_details.bank_name} ending in {account_details.account_number} already exists."
+        )
     
-    account = create_account(db, current_user.id, **account_details.model_dump())
-    return account
+    try:
+        account = create_account(db, current_user.id, **account_details.model_dump())
+        return account
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"An account for {account_details.bank_name} ending in {account_details.account_number} already exists."
+        )
 
 
 @router.get("/get-account/{account_id}", response_model=BankAccountOut, status_code=200)

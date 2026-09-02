@@ -391,13 +391,12 @@ def generate_excel_report(
     category: Optional[str] = None,
     account: Optional[str] = None,
     is_limited: bool = False,
+    transactions_only: bool = False,
 ) -> io.BytesIO:
     """
-    Generates a professionally styled Excel workbook (.xlsx) with 4 comprehensive sheets:
-    1. Financial Summary
-    2. All Transactions
-    3. Income Details
-    4. Expense Details
+    Generates a professionally styled Excel workbook (.xlsx).
+    If transactions_only=True, generates a standalone Transactions Ledger workbook.
+    Otherwise generates the comprehensive 4-sheet financial audit workbook.
     """
     report_data = get_user_report_data(
         db=db,
@@ -443,6 +442,67 @@ def generate_excel_report(
 
     currency_format = '₹ #,##0.00'
     pct_format = '0.0%'
+
+    # If transactions_only: build standalone Transactions sheet only
+    if transactions_only:
+        ws_tx = wb.active
+        ws_tx.title = "Transactions"
+        ws_tx.views.sheetView[0].showGridLines = True
+
+        ws_tx.merge_cells("A1:G1")
+        ws_tx["A1"].value = f"BudgetBuddy — Transactions Ledger ({report_data.summary.period_label})"
+        ws_tx["A1"].font = font_title
+        ws_tx["A1"].fill = header_fill
+        ws_tx["A1"].alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        ws_tx.row_dimensions[1].height = 32
+
+        ws_tx.merge_cells("A2:G2")
+        ws_tx["A2"].value = f"User: {user.email}   |   Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        ws_tx["A2"].font = font_subtitle
+        ws_tx["A2"].fill = header_fill
+        ws_tx["A2"].alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        ws_tx.row_dimensions[2].height = 20
+
+        tx_headers = ["# ID", "Date", "Type", "Category / Source", "Account", "Description", "Amount (INR)"]
+        for col_idx, h in enumerate(tx_headers, start=1):
+            cell = ws_tx.cell(row=4, column=col_idx, value=h)
+            cell.font = font_tbl_header
+            cell.fill = subheader_fill
+            cell.alignment = Alignment(horizontal="center" if col_idx in (1, 2, 3) else ("right" if col_idx == 7 else "left"), vertical="center")
+            cell.border = thin_border
+        ws_tx.row_dimensions[4].height = 24
+
+        row_num = 5
+        for item in report_data.transactions:
+            is_inc = item.type == "income"
+            ws_tx.cell(row=row_num, column=1, value=item.id).alignment = Alignment(horizontal="center")
+            ws_tx.cell(row=row_num, column=2, value=item.date.strftime("%Y-%m-%d %H:%M") if item.date else "-").alignment = Alignment(horizontal="center")
+            c3 = ws_tx.cell(row=row_num, column=3, value=item.type.upper())
+            c3.alignment = Alignment(horizontal="center")
+            c3.font = font_income if is_inc else font_expense
+            ws_tx.cell(row=row_num, column=4, value=item.category_or_source).font = font_data_bold
+            ws_tx.cell(row=row_num, column=5, value=item.account).font = font_data
+            ws_tx.cell(row=row_num, column=6, value=item.description or "-").font = font_data
+            c7 = ws_tx.cell(row=row_num, column=7, value=item.amount if is_inc else -item.amount)
+            c7.font = font_income if is_inc else font_expense
+            c7.number_format = currency_format
+            c7.alignment = Alignment(horizontal="right")
+
+            for c in range(1, 8):
+                ws_tx.cell(row=row_num, column=c).border = thin_border
+                if row_num % 2 == 0:
+                    ws_tx.cell(row=row_num, column=c).fill = zebra_fill
+            row_num += 1
+
+        for col in ws_tx.columns:
+            max_len = max(len(str(cell.value or "")) for cell in col)
+            col_letter = get_column_letter(col[0].column)
+            ws_tx.column_dimensions[col_letter].width = max(max_len + 4, 14)
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return output
 
     # ══════════════════════════════════════════════════════════════════════════
     # SHEET 1: Financial Summary

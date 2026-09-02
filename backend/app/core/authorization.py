@@ -192,7 +192,7 @@ def check_resource_ownership(
 
 # Tier limits for Basic users
 BASIC_TIER_LIMITS = {
-    "budget": 3,       # Max 3 active budgets for Basic User
+    "budget": 5,       # Max 5 active budgets for Basic User
     "saving_goal": 2,  # Max 2 active savings goals for Basic User
     "export_txns": 10, # Max 10 transactions in basic preview export
 }

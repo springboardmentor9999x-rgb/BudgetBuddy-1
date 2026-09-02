@@ -4,17 +4,19 @@ from sqlalchemy import select
 from app.models.account import Account
 
 def get_account_by_user_and_bank_name(db: Session, user_id: int, bank_name: str) -> Account:
-    """_summary_
-
-    Args:
-        db (Session): the database session
-        user_id (int): the ID of the user for whom to retrieve accounts
-        bank_name (str): the name of the bank for which to retrieve accounts
-
-    Returns:
-        Account: get's the account for a given user and bank name
-    """
+    """Get account for a user by bank name."""
     stmt = select(Account).where(Account.user_id == user_id, Account.bank_name == bank_name)
+    result = db.execute(stmt).scalars().first()
+    return result
+
+
+def get_account_by_user_bank_and_number(db: Session, user_id: int, bank_name: str, account_number: str) -> Account | None:
+    """Get account for a user by bank name and account number."""
+    stmt = select(Account).where(
+        Account.user_id == user_id,
+        Account.bank_name == bank_name,
+        Account.account_number == account_number,
+    )
     result = db.execute(stmt).scalars().first()
     return result
 

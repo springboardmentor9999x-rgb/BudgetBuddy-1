@@ -14,7 +14,6 @@ import type { registerUser, User, UserRole } from "../types/auth.type.ts";
 
 type AuthStore = {
   user: User | null;
-  email: string;
 
   loading: boolean;
   authInitialized: boolean;
@@ -32,7 +31,6 @@ type AuthStore = {
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
-  email: "",
 
   loading: false,
   authInitialized: false,
@@ -74,10 +72,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
     try {
       await registerApi(userData);
-
-      set({
-        email: userData.email,
-      });
     } finally {
       set({ loading: false });
     }
@@ -88,10 +82,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
     try {
       await verifyOtpApi(email, otp);
-
-      set({
-        email: "",
-      });
     } finally {
       set({ loading: false });
     }
@@ -117,7 +107,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
       set({
         user: null,
-        email: "",
       });
     } finally {
       set({ loading: false });

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Response, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -58,6 +58,7 @@ def get_report_data_endpoint(
 def export_excel_report_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    scope: str = Query("summary", description="Scope: 'summary' (Full financial workbook, Premium/Admin only) or 'transactions' (Transactions ledger only)"),
     period_type: str = Query("month", description="Period type: month, year, custom, all"),
     month: Optional[int] = Query(None, ge=1, le=12, description="Month number 1-12"),
     year: Optional[int] = Query(None, ge=2000, le=2100, description="Year number"),
@@ -69,11 +70,20 @@ def export_excel_report_endpoint(
 ):
     """
     Generates and downloads an Excel spreadsheet (.xlsx).
-    Basic users receive a limited export (latest 10 transactions preview);
-    Premium & Admin users receive the full 4-sheet formatted multi-tab workbook.
+    - Scope 'summary': Full 4-sheet multi-tab workbook with KPI analysis and category breakdowns.
+      Restricted to Premium and Admin members.
+    - Scope 'transactions': Clean transaction ledger table. Available to all users.
     """
-    is_full = has_permission(current_user, Permission.EXPORT_FULL)
-    is_limited = not is_full
+    scope_norm = scope.strip().lower()
+    is_transactions_only = (scope_norm == "transactions")
+
+    if not is_transactions_only:
+        # Full summary export requires EXPORT_FULL permission
+        if not has_permission(current_user, Permission.EXPORT_FULL):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission denied: Exporting the full financial summary report is reserved for Premium and Admin members. Normal users can export transaction data only. Please subscribe to Premium."
+            )
 
     excel_buffer = generate_excel_report(
         db=db,
@@ -86,13 +96,14 @@ def export_excel_report_endpoint(
         transaction_type=transaction_type,
         category=category,
         account=account,
-        is_limited=is_limited,
+        is_limited=False,
+        transactions_only=is_transactions_only,
     )
 
     log_activity(
         db=db,
         action="EXPORT_EXCEL",
-        details=f"User exported Excel report for period '{period_type}' (Tier: {'Full' if is_full else 'Limited'}).",
+        details=f"User exported Excel report for period '{period_type}' (Scope: '{scope_norm}').",
         user_id=current_user.id,
         user_email=current_user.email,
         resource_type="report",
@@ -100,8 +111,8 @@ def export_excel_report_endpoint(
     )
 
     now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tier_prefix = "Full" if is_full else "Limited"
-    filename = f"BudgetBuddy_{tier_prefix}_Report_{period_type}_{now_str}.xlsx"
+    tier_prefix = "Transactions" if is_transactions_only else "Full_Report"
+    filename = f"BudgetBuddy_{tier_prefix}_{period_type}_{now_str}.xlsx"
 
     return StreamingResponse(
         excel_buffer,
@@ -127,12 +138,14 @@ def export_pdf_report_endpoint(
     account: Optional[str] = Query(None, description="Filter by account"),
 ):
     """
-    Generates and downloads a professional PDF financial report.
-    Basic users receive a limited export preview (10 transactions max);
-    Premium & Admin users receive the full multi-page audit report.
+    Generates and downloads a comprehensive professional PDF financial report.
+    Restricted to Premium and Admin members. Normal users can export transactions via CSV or Excel.
     """
-    is_full = has_permission(current_user, Permission.EXPORT_FULL)
-    is_limited = not is_full
+    if not has_permission(current_user, Permission.EXPORT_FULL):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied: Exporting the full financial summary report is reserved for Premium and Admin members. Normal users can export transaction data only. Please subscribe to Premium."
+        )
 
     pdf_buffer = generate_pdf_report(
         db=db,
@@ -145,13 +158,13 @@ def export_pdf_report_endpoint(
         transaction_type=transaction_type,
         category=category,
         account=account,
-        is_limited=is_limited,
+        is_limited=False,
     )
 
     log_activity(
         db=db,
         action="EXPORT_PDF",
-        details=f"User exported PDF report for period '{period_type}' (Tier: {'Full' if is_full else 'Limited'}).",
+        details=f"User exported full PDF report for period '{period_type}'.",
         user_id=current_user.id,
         user_email=current_user.email,
         resource_type="report",
@@ -159,8 +172,7 @@ def export_pdf_report_endpoint(
     )
 
     now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tier_prefix = "Full" if is_full else "Limited"
-    filename = f"BudgetBuddy_{tier_prefix}_Report_{period_type}_{now_str}.pdf"
+    filename = f"BudgetBuddy_Full_Report_{period_type}_{now_str}.pdf"
 
     return StreamingResponse(
         pdf_buffer,

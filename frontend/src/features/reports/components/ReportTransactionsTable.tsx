@@ -5,27 +5,22 @@ import {
   RiArrowUpLine,
   RiArrowDownLine,
   RiFileExcel2Line,
-  RiFilePdfLine,
   RiCalendarLine,
-  RiVipCrownLine,
+  RiDownload2Line,
 } from 'react-icons/ri';
 import type { ReportTransactionItem } from '../types/report.type.ts';
-import { useAuthStore } from '../../auth/store/useAuthStore.ts';
+import { useReportStore } from '../store/useReportStore.ts';
 
 interface Props {
   transactions: ReportTransactionItem[];
-  onExportExcel: () => void;
-  isExportingExcel: boolean;
+  onExportExcel?: () => void;
+  isExportingExcel?: boolean;
   onExportPdf?: () => void;
   isExportingPdf?: boolean;
 }
 
 export const ReportTransactionsTable: React.FC<Props> = ({
   transactions,
-  onExportExcel,
-  isExportingExcel,
-  onExportPdf,
-  isExportingPdf,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
@@ -34,8 +29,12 @@ export const ReportTransactionsTable: React.FC<Props> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  const user = useAuthStore((s) => s.user);
-  const isBasic = user?.role === 'user';
+  const {
+    exportTransactionsCsv,
+    exportTransactionsExcel,
+    isExportingCsv,
+    isExportingExcel: isExportingTxExcel,
+  } = useReportStore();
 
   const handleSort = (field: 'date' | 'amount') => {
     if (sortField === field) {
@@ -86,18 +85,12 @@ export const ReportTransactionsTable: React.FC<Props> = ({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-gray-200">Transaction History Ledger</h3>
-            {isBasic ? (
-              <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-bold">
-                Basic Tier Export
-              </span>
-            ) : (
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                <RiVipCrownLine /> Full Multi-Sheet Export
-              </span>
-            )}
+            <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-bold">
+              Transactions Export
+            </span>
           </div>
           <p className="text-xs text-gray-400">
-            Showing {filteredAndSorted.length} matching transactions
+            Full executive summary reports are available above.
           </p>
         </div>
 
@@ -141,28 +134,26 @@ export const ReportTransactionsTable: React.FC<Props> = ({
             ))}
           </div>
 
-          {/* Export PDF Button */}
-          {onExportPdf && (
-            <button
-              onClick={onExportPdf}
-              disabled={isExportingPdf}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 transition-all cursor-pointer disabled:opacity-50"
-              title={isBasic ? "Download PDF Report (Limited preview for Basic tier)" : "Download Full PDF Financial Report"}
-            >
-              <RiFilePdfLine className="text-sm" />
-              {isExportingPdf ? 'Exporting...' : isBasic ? 'Export PDF (Basic)' : 'Export PDF (Full)'}
-            </button>
-          )}
-
-          {/* Download Excel Quick Button */}
+          {/* Export Transactions CSV
           <button
-            onClick={onExportExcel}
-            disabled={isExportingExcel}
+            onClick={exportTransactionsCsv}
+            disabled={isExportingCsv}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all cursor-pointer disabled:opacity-50"
+            title="Download Transactions Ledger (.csv)"
+          >
+            <RiDownload2Line className="text-sm" />
+            {isExportingCsv ? 'Exporting...' : 'Export CSV'}
+          </button> */}
+
+          {/* Export Transactions Excel */}
+          <button
+            onClick={exportTransactionsExcel}
+            disabled={isExportingTxExcel}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
-            title={isBasic ? "Download Excel (Summary sheet only for Basic tier)" : "Download Full 4-Sheet Excel Workbook"}
+            title="Download Transactions Ledger (.xlsx)"
           >
             <RiFileExcel2Line className="text-sm" />
-            {isExportingExcel ? 'Exporting...' : isBasic ? 'Export Excel (Basic)' : 'Export Excel (Full)'}
+            {isExportingTxExcel ? 'Exporting...' : 'Export Excel'}
           </button>
         </div>
       </div>

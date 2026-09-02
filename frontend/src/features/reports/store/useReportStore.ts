@@ -9,14 +9,17 @@ interface ReportStoreState {
   isLoading: boolean;
   isExportingExcel: boolean;
   isExportingPdf: boolean;
+  isExportingCsv: boolean;
   error: string | null;
 
   setFilter: <K extends keyof ReportFilterState>(key: K, value: ReportFilterState[K]) => void;
   setFilters: (newFilters: Partial<ReportFilterState>) => void;
   applyPreset: (preset: 'this_month' | 'last_month' | 'this_year' | 'last_30_days' | 'last_90_days' | 'all_time') => void;
   fetchReportData: () => Promise<void>;
-  exportExcel: () => Promise<void>;
+  exportExcel: (scope?: 'summary' | 'transactions') => Promise<void>;
   exportPdf: () => Promise<void>;
+  exportTransactionsCsv: () => Promise<void>;
+  exportTransactionsExcel: () => Promise<void>;
 }
 
 const now = new Date();
@@ -38,6 +41,7 @@ export const useReportStore = create<ReportStoreState>((set, get) => ({
   isLoading: false,
   isExportingExcel: false,
   isExportingPdf: false,
+  isExportingCsv: false,
   error: null,
 
   setFilter: (key, value) => {
@@ -144,14 +148,18 @@ export const useReportStore = create<ReportStoreState>((set, get) => ({
     }
   },
 
-  exportExcel: async () => {
+  exportExcel: async (scope = 'summary') => {
     set({ isExportingExcel: true });
     try {
-      await reportApi.exportExcel(get().filters);
-      toast.success('Excel report sheet downloaded successfully!');
+      await reportApi.exportExcel(get().filters, scope);
+      toast.success(
+        scope === 'transactions'
+          ? 'Transactions Excel file downloaded!'
+          : 'Full Excel financial audit sheet downloaded!'
+      );
     } catch (err: any) {
       console.error('Excel export error:', err);
-      toast.error('Failed to export Excel report.');
+      toast.error(err.response?.data?.detail || 'Failed to export Excel report.');
     } finally {
       set({ isExportingExcel: false });
     }
@@ -161,12 +169,29 @@ export const useReportStore = create<ReportStoreState>((set, get) => ({
     set({ isExportingPdf: true });
     try {
       await reportApi.exportPdf(get().filters);
-      toast.success('PDF report document downloaded successfully!');
+      toast.success('Full PDF financial report downloaded!');
     } catch (err: any) {
       console.error('PDF export error:', err);
-      toast.error('Failed to export PDF report.');
+      toast.error(err.response?.data?.detail || 'Failed to export PDF report.');
     } finally {
       set({ isExportingPdf: false });
     }
+  },
+
+  exportTransactionsCsv: async () => {
+    set({ isExportingCsv: true });
+    try {
+      await reportApi.exportCsv(get().filters);
+      toast.success('Transactions CSV ledger downloaded!');
+    } catch (err: any) {
+      console.error('CSV export error:', err);
+      toast.error(err.response?.data?.detail || 'Failed to export transactions CSV.');
+    } finally {
+      set({ isExportingCsv: false });
+    }
+  },
+
+  exportTransactionsExcel: async () => {
+    await get().exportExcel('transactions');
   },
 }));

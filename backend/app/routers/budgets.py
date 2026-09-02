@@ -30,7 +30,7 @@ async def add_budget(
     current_user: User = Depends(require_permission(Permission.BUDGET_BASIC))
 ):
     """
-    Creates a new budget category. Basic users are limited to 3 active budgets;
+    Creates a new budget category. Basic users are limited to 5 active budgets;
     Premium and Admin users enjoy unlimited budgets.
     """
     existing_budgets = get_budgets_by_user(db, current_user.id, limit=1000)

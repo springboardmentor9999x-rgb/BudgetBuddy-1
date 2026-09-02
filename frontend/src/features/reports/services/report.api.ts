@@ -34,15 +34,20 @@ export const reportApi = {
     return response.data;
   },
 
-  exportExcel: async (filters: Partial<ReportFilterState>): Promise<void> => {
+  exportExcel: async (
+    filters: Partial<ReportFilterState>,
+    scope: 'summary' | 'transactions' = 'summary'
+  ): Promise<void> => {
     const params = buildQueryParams(filters);
+    params.scope = scope;
+
     const response = await api.get('/reports/export/excel', {
       params,
       responseType: 'blob',
     });
 
     // Extract filename or fallback
-    let filename = `BudgetBuddy_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+    let filename = `BudgetBuddy_${scope === 'transactions' ? 'Transactions' : 'Report'}_${new Date().toISOString().split('T')[0]}.xlsx`;
     const disposition = response.headers['content-disposition'];
     if (disposition && disposition.includes('filename=')) {
       const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
@@ -81,6 +86,33 @@ export const reportApi = {
     }
 
     const blob = new Blob([response.data], { type: 'application/pdf' });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+
+  exportCsv: async (filters: Partial<ReportFilterState>): Promise<void> => {
+    const params = buildQueryParams(filters);
+    const response = await api.get('/reports/export/csv', {
+      params,
+      responseType: 'blob',
+    });
+
+    let filename = `BudgetBuddy_Transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    const disposition = response.headers['content-disposition'];
+    if (disposition && disposition.includes('filename=')) {
+      const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+      if (matches && matches[1]) {
+        filename = matches[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = new Blob([response.data], { type: 'text/csv' });
     const downloadUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = downloadUrl;

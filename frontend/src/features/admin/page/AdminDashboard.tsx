@@ -31,6 +31,7 @@ import {
   fetchSystemAnalyticsApi,
   type SystemAnalyticsResponse,
 } from '../services/admin.api.ts';
+import SubscriptionRequestsSection from '../components/SubscriptionRequestsSection.tsx';
 
 // Register Chart.js components
 ChartJS.register(
@@ -289,6 +290,9 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* ── Subscription Requests Management ── */}
+            <SubscriptionRequestsSection onRequestProcessed={loadAnalytics} />
 
             {/* ── Charts Row ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

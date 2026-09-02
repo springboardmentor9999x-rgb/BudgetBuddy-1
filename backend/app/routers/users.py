@@ -43,8 +43,15 @@ def upgrade_user_tier(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Upgrades the authenticated user's tier to 'premium' or switches plan.
+    Switches role tier. Regular users must use the /subscriptions/request workflow
+    which requires administrator review and approval.
     """
+    if normalize_role(current_user.role) != UserRole.ADMIN.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Direct tier upgrades are disabled. Please submit a subscription request for administrator approval."
+        )
+
     target_role = normalize_role(payload.tier)
     if target_role not in (UserRole.USER.value, UserRole.PREMIUM.value, UserRole.ADMIN.value):
         raise HTTPException(
@@ -60,7 +67,7 @@ def upgrade_user_tier(
     log_activity(
         db=db,
         action="USER_TIER_UPGRADED",
-        details=f"User {current_user.email} changed tier from '{old_role}' to '{target_role}'.",
+        details=f"Admin {current_user.email} switched own tier from '{old_role}' to '{target_role}'.",
         user_id=current_user.id,
         user_email=current_user.email,
         resource_type="subscription",

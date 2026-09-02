@@ -53,7 +53,7 @@ const AccountPage = () => {
     try {
       await upgradeTier(targetTier);
       toast.success(`Account role changed to ${targetTier.toUpperCase()}`);
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to change tier.');
     } finally {
       setIsSwitchingTier(false);
@@ -70,7 +70,7 @@ const AccountPage = () => {
     },
     {
       feature: 'Category Budgets',
-      status: currentRole === 'user' ? '⚠️ Basic (Max 3)' : '✅ Advanced (Unlimited)',
+      status: currentRole === 'user' ? '⚠️ Basic (Max 5)' : '✅ Advanced (Unlimited)',
       roles: ['user', 'premium', 'admin'],
     },
     {
@@ -85,7 +85,7 @@ const AccountPage = () => {
     },
     {
       feature: 'PDF & Excel Reports',
-      status: currentRole === 'user' ? '⚠️ Limited (10 txns preview)' : '✅ Full 4-Sheet Multi-Tab Workbooks',
+      status: currentRole === 'user' ? '⚠️ Limited (Transactions Only)' : '✅ Full 4-Sheet Multi-Tab Workbooks & PDF Summaries',
       roles: ['user', 'premium', 'admin'],
     },
     {
@@ -171,12 +171,12 @@ const AccountPage = () => {
                     ? 'Administrator with full system analytics, audit logging, and user management.'
                     : currentRole === 'premium'
                     ? 'Premium plan with unlimited category budgets, milestone goals, and multi-sheet exports.'
-                    : 'Standard free plan with basic budgets (max 3), saving goals (max 2), and preview exports.'}
+                    : 'Standard free plan with basic budgets (max 5), saving goals (max 2), and transaction exports.'}
                 </p>
               </div>
             </div>
 
-            {/* Quick Plan Switcher Buttons */}
+            {/* Quick Plan Actions */}
             <div className="flex items-center gap-2">
               {currentRole === 'user' && (
                 <button
@@ -187,24 +187,26 @@ const AccountPage = () => {
                 </button>
               )}
 
-              {/* Developer Tier Switcher for Testing */}
-              <div className="flex items-center gap-1 bg-[#161c24] p-1 rounded-xl border border-white/10 text-xs">
-                <span className="text-[10px] text-gray-500 px-2 font-mono">Switch:</span>
-                {(['user', 'premium', 'admin'] as UserRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => handleTierSwitch(r)}
-                    disabled={isSwitchingTier || currentRole === r}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold capitalize transition-all cursor-pointer ${
-                      currentRole === r
-                        ? 'bg-white/15 text-white'
-                        : 'text-gray-400 hover:text-white disabled:opacity-30'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
+              {/* Administrator Role Switcher */}
+              {currentRole === 'admin' && (
+                <div className="flex items-center gap-1 bg-[#161c24] p-1 rounded-xl border border-white/10 text-xs">
+                  <span className="text-[10px] text-gray-500 px-2 font-mono">Role:</span>
+                  {(['user', 'premium', 'admin'] as UserRole[]).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => handleTierSwitch(r)}
+                      disabled={isSwitchingTier || currentRole === r}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-bold capitalize transition-all cursor-pointer ${
+                        currentRole === r
+                          ? 'bg-white/15 text-white'
+                          : 'text-gray-400 hover:text-white disabled:opacity-30'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,12 +1,11 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 
 import HomePage from "./features/home/HomePage.tsx";
 import ProtectedRoute from "./routes/ProtectedRoute.tsx";
 import AdminRoute from "./routes/AdminRoute.tsx";
 import Navbar from "./features/Navbar.tsx";
-import Auth from "./features/auth/page/Auth.tsx";
+import SigninPage from "./features/auth/SigninPage.tsx";
 import RegisterPage from "./features/auth/RegisterPage.tsx";
-import OtpVerify from "./features/auth/OtpVerify.tsx";
 
 import Dashboard from "./features/dashboard/page/Dashboard.tsx";
 import ExpensePage from "./features/expense/page/Expense.tsx";
@@ -83,7 +82,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/login",
-    Component: Auth,
+    Component: SigninPage,
+  },
+  {
+    path: "/signin",
+    Component: SigninPage,
   },
   {
     path: "/register",
@@ -91,7 +94,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/verify-otp",
-    Component: OtpVerify,
+    Component: () => <Navigate to="/register" replace />,
   },
   {
     path: "*",

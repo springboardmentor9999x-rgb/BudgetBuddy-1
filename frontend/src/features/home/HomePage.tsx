@@ -54,7 +54,7 @@ const HomePage = () => {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5 mb-12 sm:mb-16">
               <a
-                href="/login"
+                href="/register"
                 className="group relative inline-flex items-center justify-center px-8 sm:px-10 py-3.5 sm:py-4 text-base sm:text-lg font-semibold text-white bg-linear-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 transition-all duration-300 ease-out overflow-hidden"
               >
                 <span className="relative z-10 flex items-center gap-2">
