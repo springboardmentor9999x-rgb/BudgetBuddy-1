@@ -45,6 +45,13 @@ export interface ReportTimelineItem {
   net: number;
 }
 
+export interface ReportUserOption {
+  id: number;
+  email: string;
+  full_name: string | null;
+  role: string;
+}
+
 export interface ReportTransactionItem {
   id: number;
   type: 'income' | 'expense';
@@ -53,6 +60,8 @@ export interface ReportTransactionItem {
   description: string | null;
   account: string;
   amount: number;
+  user_id?: number;
+  user_email?: string | null;
 }
 
 export interface ReportDataResponse {
@@ -65,6 +74,8 @@ export interface ReportDataResponse {
   available_years: number[];
   available_categories: string[];
   available_accounts: string[];
+  available_users?: ReportUserOption[] | null;
+  selected_user_id?: number | null;
 }
 
 export interface ReportFilterState {
@@ -76,4 +87,5 @@ export interface ReportFilterState {
   transaction_type: 'all' | 'income' | 'expense';
   category: string;
   account: string;
+  user_id?: string | number;
 }

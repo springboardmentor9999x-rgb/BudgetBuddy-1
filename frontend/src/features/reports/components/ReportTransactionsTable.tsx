@@ -6,10 +6,11 @@ import {
   RiArrowDownLine,
   RiFileExcel2Line,
   RiCalendarLine,
-  RiDownload2Line,
+  RiUserLine,
 } from 'react-icons/ri';
 import type { ReportTransactionItem } from '../types/report.type.ts';
 import { useReportStore } from '../store/useReportStore.ts';
+import { useAuthStore } from '../../auth/store/useAuthStore.ts';
 
 interface Props {
   transactions: ReportTransactionItem[];
@@ -29,10 +30,11 @@ export const ReportTransactionsTable: React.FC<Props> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'admin';
+
   const {
-    exportTransactionsCsv,
     exportTransactionsExcel,
-    isExportingCsv,
     isExportingExcel: isExportingTxExcel,
   } = useReportStore();
 
@@ -53,8 +55,15 @@ export const ReportTransactionsTable: React.FC<Props> = ({
         const cat = (t.category_or_source || '').toLowerCase();
         const desc = (t.description || '').toLowerCase();
         const acct = (t.account || '').toLowerCase();
+        const userEmail = (t.user_email || '').toLowerCase();
         const amt = t.amount.toString();
-        return cat.includes(q) || desc.includes(q) || acct.includes(q) || amt.includes(q);
+        return (
+          cat.includes(q) ||
+          desc.includes(q) ||
+          acct.includes(q) ||
+          amt.includes(q) ||
+          userEmail.includes(q)
+        );
       }
       return true;
     });
@@ -164,6 +173,7 @@ export const ReportTransactionsTable: React.FC<Props> = ({
           <thead className="bg-[#12171e] text-gray-400 uppercase tracking-wider font-semibold border-b border-white/5">
             <tr>
               <th className="py-3 px-4"># ID</th>
+              {isAdmin && <th className="py-3 px-4 text-purple-300">User</th>}
               <th
                 className="py-3 px-4 cursor-pointer hover:text-white transition-colors select-none"
                 onClick={() => handleSort('date')}
@@ -199,7 +209,7 @@ export const ReportTransactionsTable: React.FC<Props> = ({
           <tbody className="divide-y divide-white/5">
             {paginatedTransactions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-gray-500">
+                <td colSpan={isAdmin ? 8 : 7} className="text-center py-12 text-gray-500">
                   No transactions found matching the selected filters.
                 </td>
               </tr>
@@ -220,6 +230,14 @@ export const ReportTransactionsTable: React.FC<Props> = ({
                     className="hover:bg-white/[0.02] transition-colors"
                   >
                     <td className="py-3 px-4 text-gray-500 font-mono">#{tx.id}</td>
+                    {isAdmin && (
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2 py-0.5 rounded-md text-[11px] font-mono">
+                          <RiUserLine className="text-purple-400 shrink-0" />
+                          {tx.user_email || (tx.user_id ? `User #${tx.user_id}` : '-')}
+                        </span>
+                      </td>
+                    )}
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-gray-300">
                         <RiCalendarLine className="text-gray-500" />

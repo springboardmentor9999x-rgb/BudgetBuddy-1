@@ -2,11 +2,13 @@ import React, { useEffect } from 'react';
 import {
   RiFileChartLine,
   RiInformationLine,
+  RiShieldUserLine,
 } from 'react-icons/ri';
 import { setPageTitle } from '../../../utils/setTitle.ts';
 import ContentWrapper from '../../../components/ContentWrapper.tsx';
 import Loading from '../../Loading.tsx';
 import { useReportStore } from '../store/useReportStore.ts';
+import { useAuthStore } from '../../auth/store/useAuthStore.ts';
 import { ReportFilters } from '../components/ReportFilters.tsx';
 import { ReportSummaryCards } from '../components/ReportSummaryCards.tsx';
 import { ReportCharts } from '../components/ReportCharts.tsx';
@@ -15,6 +17,9 @@ import { ReportTransactionsTable } from '../components/ReportTransactionsTable.t
 
 const ReportsPage: React.FC = () => {
   setPageTitle('Financial Reports & PDF / Excel Export | BudgetBuddy');
+
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === 'admin';
 
   const {
     reportData,
@@ -49,6 +54,12 @@ const ReportsPage: React.FC = () => {
               Generate customizable financial audit summaries and download PDF performance reports or Excel spreadsheets.
             </p>
           </div>
+          {isAdmin && (
+            <div className="inline-flex items-center gap-1.5 bg-purple-500/15 text-purple-300 border border-purple-500/30 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-[0_0_12px_rgba(168,85,247,0.15)] shrink-0 self-start sm:self-auto">
+              <RiShieldUserLine className="text-purple-400 text-sm" />
+              <span>ADMIN AUDIT ACCESS</span>
+            </div>
+          )}
         </div>
 
         {/* ── Filters Section ── */}

@@ -23,6 +23,9 @@ const buildQueryParams = (filters: Partial<ReportFilterState>) => {
   if (filters.account && filters.account !== 'all') {
     params.account = filters.account;
   }
+  if (filters.user_id !== undefined && filters.user_id !== null && filters.user_id !== '') {
+    params.user_id = filters.user_id;
+  }
 
   return params;
 };

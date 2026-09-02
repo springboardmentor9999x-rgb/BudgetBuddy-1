@@ -5,6 +5,7 @@ import {
   RiFilter3Line,
   RiCalendarEventLine,
   RiVipCrownLine,
+  RiShieldUserLine,
 } from 'react-icons/ri';
 import { useReportStore } from '../store/useReportStore.ts';
 import { useAuthStore } from '../../auth/store/useAuthStore.ts';
@@ -50,6 +51,7 @@ export const ReportFilters: React.FC = () => {
 
   const user = useAuthStore((s) => s.user);
   const isBasic = user?.role === 'user';
+  const isAdmin = user?.role === 'admin';
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState('');
 
@@ -59,6 +61,7 @@ export const ReportFilters: React.FC = () => {
 
   const availableCategories = reportData?.available_categories || [];
   const availableAccounts = reportData?.available_accounts || [];
+  const availableUsers = reportData?.available_users || [];
 
   const handleApply = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -139,6 +142,15 @@ export const ReportFilters: React.FC = () => {
 
       {/* ─── Filter Form Controls ─── */}
       <form onSubmit={handleApply} className="space-y-4">
+        {isAdmin && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-200">
+            <RiShieldUserLine className="text-purple-400 text-lg shrink-0" />
+            <span>
+              <strong>Administrator Audit Mode:</strong> You are viewing platform-wide financial records. Use the <em>User Scope</em> filter to inspect individual user records or audit the entire platform.
+            </span>
+          </div>
+        )}
+
         {/* Period Selector Tabs */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-gray-400 mr-2">Filter Mode:</span>
@@ -163,7 +175,7 @@ export const ReportFilters: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 pt-2">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${isAdmin ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-3.5 pt-2`}>
           {/* Specific Month Selector */}
           {filters.period_type === 'month' && (
             <div>
@@ -271,6 +283,31 @@ export const ReportFilters: React.FC = () => {
               ))}
             </select>
           </div>
+
+          {/* User Scope Filter (Admin Only) */}
+          {isAdmin && (
+            <div>
+              <label className="block text-xs font-medium text-purple-300 mb-1.5 flex items-center gap-1">
+                <RiShieldUserLine className="text-purple-400" /> User Scope
+              </label>
+              <select
+                value={filters.user_id || 'all'}
+                onChange={(e) => {
+                  setFilter('user_id', e.target.value);
+                }}
+                className="w-full bg-[#1b1629] border border-purple-500/30 rounded-xl px-3 py-2 text-sm text-purple-100 focus:outline-none focus:border-purple-400 transition-colors"
+              >
+                <option value="all" className="bg-[#161c24] text-white">
+                  🌐 All Users (System-wide)
+                </option>
+                {availableUsers.map((u) => (
+                  <option key={u.id} value={u.id} className="bg-[#161c24] text-white">
+                    👤 {u.email} {u.full_name ? `(${u.full_name})` : ''} [{u.role.toUpperCase()}]
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Filter Action Buttons */}

@@ -3,7 +3,7 @@ import csv
 from datetime import datetime, date, timedelta, timezone
 from calendar import month_name, month_abbr
 from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select, func, extract
 
 import openpyxl
@@ -37,6 +37,7 @@ from app.schemas.report import (
     ReportTimelineItem,
     ReportTransactionItem,
     ReportDataResponse,
+    ReportUserOption,
 )
 
 
@@ -104,11 +105,23 @@ def parse_date_boundaries(
         return start_dt, end_dt, label
 
 
-def get_available_filter_options(db: Session, user_id: int) -> Tuple[List[int], List[str], List[str]]:
+def get_available_filter_options(db: Session, user_id: Optional[int] = None) -> Tuple[List[int], List[str], List[str]]:
     """Retrieve distinct years, categories, and accounts for filter dropdowns."""
     # Years from income & expense dates
-    inc_years_stmt = select(extract('year', Income.date)).where(Income.user_id == user_id).distinct()
-    exp_years_stmt = select(extract('year', Expense.date)).where(Expense.user_id == user_id).distinct()
+    inc_years_stmt = select(extract('year', Income.date)).distinct()
+    exp_years_stmt = select(extract('year', Expense.date)).distinct()
+    cat_stmt = select(Expense.category).distinct()
+    acct_stmt = select(Account.bank_name).distinct()
+    inc_acct_stmt = select(Income.account).distinct()
+    exp_acct_stmt = select(Expense.account).distinct()
+
+    if user_id is not None:
+        inc_years_stmt = inc_years_stmt.where(Income.user_id == user_id)
+        exp_years_stmt = exp_years_stmt.where(Expense.user_id == user_id)
+        cat_stmt = cat_stmt.where(Expense.user_id == user_id)
+        acct_stmt = acct_stmt.where(Account.user_id == user_id)
+        inc_acct_stmt = inc_acct_stmt.where(Income.user_id == user_id)
+        exp_acct_stmt = exp_acct_stmt.where(Expense.user_id == user_id)
     
     inc_years = db.execute(inc_years_stmt).scalars().all()
     exp_years = db.execute(exp_years_stmt).scalars().all()
@@ -118,15 +131,10 @@ def get_available_filter_options(db: Session, user_id: int) -> Tuple[List[int], 
     sorted_years = sorted(list(all_years), reverse=True)
 
     # Categories from expenses
-    cat_stmt = select(Expense.category).where(Expense.user_id == user_id).distinct()
     categories = sorted([c for c in db.execute(cat_stmt).scalars().all() if c])
 
     # Accounts from user accounts + income/expense records
-    acct_stmt = select(Account.bank_name).where(Account.user_id == user_id).distinct()
     accts_set = set([a for a in db.execute(acct_stmt).scalars().all() if a])
-    
-    inc_acct_stmt = select(Income.account).where(Income.user_id == user_id).distinct()
-    exp_acct_stmt = select(Expense.account).where(Expense.user_id == user_id).distinct()
     for a in db.execute(inc_acct_stmt).scalars().all():
         if a:
             accts_set.add(a)
@@ -141,7 +149,7 @@ def get_available_filter_options(db: Session, user_id: int) -> Tuple[List[int], 
 
 def get_user_report_data(
     db: Session,
-    user_id: int,
+    user_id: Optional[int] = None,
     period_type: str = "month",
     month: Optional[int] = None,
     year: Optional[int] = None,
@@ -151,9 +159,11 @@ def get_user_report_data(
     category: Optional[str] = None,
     account: Optional[str] = None,
     is_limited: bool = False,
+    is_admin: bool = False,
 ) -> ReportDataResponse:
     """
     Extracts, filters, and calculates summary metrics and full transaction history for reports.
+    If user_id is None, aggregates system-wide metrics across all users (for admin audit).
     """
     start_dt, end_dt, period_label = parse_date_boundaries(
         period_type=period_type,
@@ -164,7 +174,9 @@ def get_user_report_data(
     )
 
     # Query Incomes
-    inc_stmt = select(Income).where(Income.user_id == user_id)
+    inc_stmt = select(Income).options(joinedload(Income.user))
+    if user_id is not None:
+        inc_stmt = inc_stmt.where(Income.user_id == user_id)
     if start_dt is not None:
         inc_stmt = inc_stmt.where(Income.date >= start_dt)
     if end_dt is not None:
@@ -180,7 +192,9 @@ def get_user_report_data(
         incomes = list(db.execute(inc_stmt.order_by(Income.date.desc())).scalars().all())
 
     # Query Expenses
-    exp_stmt = select(Expense).where(Expense.user_id == user_id)
+    exp_stmt = select(Expense).options(joinedload(Expense.user))
+    if user_id is not None:
+        exp_stmt = exp_stmt.where(Expense.user_id == user_id)
     if start_dt is not None:
         exp_stmt = exp_stmt.where(Expense.date >= start_dt)
     if end_dt is not None:
@@ -326,6 +340,8 @@ def get_user_report_data(
                 description=f"Income from {inc.source}",
                 account=inc.account or "Cash",
                 amount=float(inc.amount or 0),
+                user_id=inc.user_id,
+                user_email=inc.user.email if inc.user else None,
             )
         )
 
@@ -339,6 +355,8 @@ def get_user_report_data(
                 description=exp.description or f"{exp.category} Expense",
                 account=exp.account or "Cash",
                 amount=float(exp.amount or 0),
+                user_id=exp.user_id,
+                user_email=exp.user.email if exp.user else None,
             )
         )
 
@@ -348,6 +366,19 @@ def get_user_report_data(
 
     # Available filter dropdown items
     available_years, available_categories, available_accounts = get_available_filter_options(db, user_id)
+
+    available_users: Optional[List[ReportUserOption]] = None
+    if is_admin:
+        all_users = db.query(User).order_by(User.email.asc()).all()
+        available_users = [
+            ReportUserOption(
+                id=u.id,
+                email=u.email,
+                full_name=u.profile.full_name if u.profile else None,
+                role=u.role or "user",
+            )
+            for u in all_users
+        ]
 
     summary = ReportSummaryMetrics(
         total_income=round(total_income, 2),
@@ -376,6 +407,8 @@ def get_user_report_data(
         available_years=available_years,
         available_categories=available_categories,
         available_accounts=available_accounts,
+        available_users=available_users,
+        selected_user_id=user_id,
     )
 
 
@@ -392,15 +425,17 @@ def generate_excel_report(
     account: Optional[str] = None,
     is_limited: bool = False,
     transactions_only: bool = False,
+    target_user_id: Optional[int] = None,
 ) -> io.BytesIO:
     """
     Generates a professionally styled Excel workbook (.xlsx).
     If transactions_only=True, generates a standalone Transactions Ledger workbook.
     Otherwise generates the comprehensive 4-sheet financial audit workbook.
     """
+    effective_user_id = target_user_id if target_user_id is not None else (user.id if user.role != "admin" else None)
     report_data = get_user_report_data(
         db=db,
-        user_id=user.id,
+        user_id=effective_user_id,
         period_type=period_type,
         month=month,
         year=year,
@@ -410,6 +445,7 @@ def generate_excel_report(
         category=category,
         account=account,
         is_limited=is_limited,
+        is_admin=(user.role == "admin"),
     )
 
     wb = openpyxl.Workbook()
@@ -443,6 +479,14 @@ def generate_excel_report(
     currency_format = '₹ #,##0.00'
     pct_format = '0.0%'
 
+    if effective_user_id is None:
+        user_email_display = f"All Users (Platform System-Wide) [Audited by Admin: {user.email}]"
+    elif effective_user_id != user.id:
+        target_u = db.query(User).filter(User.id == effective_user_id).first()
+        user_email_display = f"User: {target_u.email if target_u else effective_user_id} [Audited by Admin: {user.email}]"
+    else:
+        user_email_display = f"User: {user.email}"
+
     # If transactions_only: build standalone Transactions sheet only
     if transactions_only:
         ws_tx = wb.active
@@ -457,7 +501,7 @@ def generate_excel_report(
         ws_tx.row_dimensions[1].height = 32
 
         ws_tx.merge_cells("A2:G2")
-        ws_tx["A2"].value = f"User: {user.email}   |   Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        ws_tx["A2"].value = f"{user_email_display}   |   Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         ws_tx["A2"].font = font_subtitle
         ws_tx["A2"].fill = header_fill
         ws_tx["A2"].alignment = Alignment(horizontal="left", vertical="center", indent=1)
@@ -522,7 +566,6 @@ def generate_excel_report(
 
     ws_summary.merge_cells("A2:F2")
     cell_sub = ws_summary["A2"]
-    user_email_display = user.email if user else "User"
     generated_at_str = datetime.now().strftime("%d %B %Y, %I:%M %p")
     tier_note = "   |   [Basic Export: Preview (10 txns max). Upgrade to Premium for 4-Sheet Full Workbook]" if is_limited else ""
     cell_sub.value = f"Period: {report_data.summary.period_label}   |   Account User: {user_email_display}   |   Generated: {generated_at_str}{tier_note}"
@@ -1012,6 +1055,7 @@ def generate_pdf_report(
     category: Optional[str] = None,
     account: Optional[str] = None,
     is_limited: bool = False,
+    target_user_id: Optional[int] = None,
 ) -> io.BytesIO:
     """
     Generates a high-quality, professional PDF financial report including:
@@ -1022,9 +1066,10 @@ def generate_pdf_report(
     - Account Cash Flow Breakdown Table
     - Full Transaction History Ledger with individual line items and amounts
     """
+    effective_user_id = target_user_id if target_user_id is not None else (user.id if user.role != "admin" else None)
     report_data = get_user_report_data(
         db=db,
-        user_id=user.id,
+        user_id=effective_user_id,
         period_type=period_type,
         month=month,
         year=year,
@@ -1034,6 +1079,7 @@ def generate_pdf_report(
         category=category,
         account=account,
         is_limited=is_limited,
+        is_admin=(user.role == "admin"),
     )
 
     buf = io.BytesIO()
@@ -1142,7 +1188,13 @@ def generate_pdf_report(
 
     # 1. Header Banner
     now_str = datetime.now().strftime("%d %b %Y, %I:%M %p")
-    user_email_display = user.email if user else "User"
+    if effective_user_id is None:
+        user_email_display = f"All Users (Platform System-Wide) | Admin: {user.email}"
+    elif effective_user_id != user.id:
+        target_u = db.query(User).filter(User.id == effective_user_id).first()
+        user_email_display = f"User: {target_u.email if target_u else effective_user_id} | Admin: {user.email}"
+    else:
+        user_email_display = user.email if user else "User"
 
     banner_data = [
         [
@@ -1436,7 +1488,7 @@ def generate_pdf_report(
     # Build Document
     canvas_factory = create_numbered_canvas(
         report_data.summary.period_label,
-        user.email if user else "",
+        user_email_display,
     )
     doc.build(story, canvasmaker=canvas_factory)
     buf.seek(0)
@@ -1445,7 +1497,7 @@ def generate_pdf_report(
 
 def generate_csv_report(
     db: Session,
-    user_id: int,
+    user_id: Optional[int] = None,
     period_type: str = "month",
     month: Optional[int] = None,
     year: Optional[int] = None,
@@ -1454,6 +1506,7 @@ def generate_csv_report(
     transaction_type: str = "all",
     category: Optional[str] = None,
     account: Optional[str] = None,
+    requesting_user: Optional[User] = None,
 ) -> io.StringIO:
     """
     Generates a CSV transaction ledger file.
@@ -1469,6 +1522,7 @@ def generate_csv_report(
         transaction_type=transaction_type,
         category=category,
         account=account,
+        is_admin=(requesting_user.role == "admin") if requesting_user else False,
     )
 
     output = io.StringIO()
@@ -1477,6 +1531,13 @@ def generate_csv_report(
     # Metadata Header
     writer.writerow(["# BudgetBuddy Transaction History Report"])
     writer.writerow(["# Period", report_data.summary.period_label])
+    if user_id is None:
+        writer.writerow(["# Scope", "All Users (Platform System-Wide)"])
+        if requesting_user:
+            writer.writerow(["# Audited By", requesting_user.email])
+    else:
+        target_u = db.query(User).filter(User.id == user_id).first()
+        writer.writerow(["# Account", target_u.email if target_u else f"User #{user_id}"])
     writer.writerow(["# Total Income", report_data.summary.total_income])
     writer.writerow(["# Total Expenses", report_data.summary.total_expenses])
     writer.writerow(["# Net Savings", report_data.summary.net_savings])
@@ -1484,11 +1545,17 @@ def generate_csv_report(
     writer.writerow([])
 
     # Table Header
-    writer.writerow(["ID", "Date", "Type", "Category/Source", "Account", "Description", "Amount"])
+    is_system_wide = (user_id is None)
+    if is_system_wide:
+        writer.writerow(["ID", "User Email", "Date", "Type", "Category/Source", "Account", "Description", "Amount"])
+    else:
+        writer.writerow(["ID", "Date", "Type", "Category/Source", "Account", "Description", "Amount"])
 
     for item in report_data.transactions:
-        writer.writerow([
-            item.id,
+        row = [item.id]
+        if is_system_wide:
+            row.append(item.user_email or "-")
+        row.extend([
             item.date.strftime("%Y-%m-%d %H:%M") if item.date else "",
             item.type.upper(),
             item.category_or_source,
@@ -1496,6 +1563,7 @@ def generate_csv_report(
             item.description or "",
             item.amount if item.type == "income" else -item.amount,
         ])
+        writer.writerow(row)
 
     output.seek(0)
     return output

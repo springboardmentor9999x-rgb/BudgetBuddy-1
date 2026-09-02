@@ -118,21 +118,6 @@ const Navbar = () => {
               </button>
             </div>
 
-            {/* User Profile Mini Badge */}
-            {user && (
-              <div className="px-4 py-3 border-b border-white/5 bg-white/[0.02]">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0 pr-2">
-                    <p className="text-xs font-semibold text-white truncate">
-                      {user.profile?.full_name || user.email.split('@')[0]}
-                    </p>
-                    <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
-                  </div>
-                  {getRoleBadge(user.role)}
-                </div>
-              </div>
-            )}
-
             {/* Navigation */}
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
               <p className="px-3 text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">
@@ -245,11 +230,28 @@ const Navbar = () => {
             <div className="flex-1" />
 
             <div className="flex items-center gap-3">
-              {/* Header Role indicator */}
+              {/* Header User Details & Plan Badge */}
               {user && (
-                <div className="hidden sm:flex items-center gap-2 bg-[#161c24] px-3 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-xs text-gray-400">Plan:</span>
-                  {getRoleBadge(user.role)}
+                <div
+                  onClick={() => navigate('/account')}
+                  className="flex items-center gap-3 bg-[#161c24] hover:bg-[#1a212b] border border-white/5 hover:border-white/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer group shadow-sm"
+                  title="Account Settings"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform text-sm font-bold shrink-0">
+                    {(user.profile?.full_name?.[0] || user.email[0] || 'U').toUpperCase()}
+                  </div>
+                  <div className="hidden sm:flex flex-col text-left">
+                    <span className="text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors leading-tight truncate max-w-[140px] md:max-w-[200px]">
+                      {user.profile?.full_name || user.email.split('@')[0]}
+                    </span>
+                    <span className="text-[10px] text-gray-400 truncate max-w-[140px] md:max-w-[200px]">
+                      {user.email}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 pl-2 border-l border-white/5 shrink-0">
+                    {/* <span className="text-xs text-gray-400 hidden md:inline">Plan:</span> */}
+                    {getRoleBadge(user.role)}
+                  </div>
                 </div>
               )}
 

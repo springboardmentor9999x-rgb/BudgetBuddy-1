@@ -188,7 +188,7 @@ const AccountPage = () => {
               )}
 
               {/* Administrator Role Switcher */}
-              {currentRole === 'admin' && (
+              {/* {currentRole === 'admin' && (
                 <div className="flex items-center gap-1 bg-[#161c24] p-1 rounded-xl border border-white/10 text-xs">
                   <span className="text-[10px] text-gray-500 px-2 font-mono">Role:</span>
                   {(['user', 'premium', 'admin'] as UserRole[]).map((r) => (
@@ -206,7 +206,7 @@ const AccountPage = () => {
                     </button>
                   ))}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
 

@@ -50,6 +50,13 @@ class ReportTimelineItem(BaseModel):
     net: float = Field(..., description="Net savings for this time bucket")
 
 
+class ReportUserOption(BaseModel):
+    id: int
+    email: str
+    full_name: Optional[str] = None
+    role: str
+
+
 class ReportTransactionItem(BaseModel):
     id: int = Field(..., description="Transaction ID")
     type: str = Field(..., description="'income' or 'expense'")
@@ -58,6 +65,8 @@ class ReportTransactionItem(BaseModel):
     description: Optional[str] = Field(None, description="Transaction description or note")
     account: str = Field(default="Cash", description="Associated account identifier")
     amount: float = Field(..., description="Amount (positive value)")
+    user_id: Optional[int] = Field(None, description="Owner user ID")
+    user_email: Optional[str] = Field(None, description="Owner user email")
 
 
 class ReportDataResponse(BaseModel):
@@ -70,5 +79,7 @@ class ReportDataResponse(BaseModel):
     available_years: List[int]
     available_categories: List[str]
     available_accounts: List[str]
+    available_users: Optional[List[ReportUserOption]] = None
+    selected_user_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)

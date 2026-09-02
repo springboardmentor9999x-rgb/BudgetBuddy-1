@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 from fastapi import APIRouter, Depends, Query, Response, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -18,10 +18,36 @@ from app.core.authorization import (
     Permission,
     has_permission,
     require_permission,
+    normalize_role,
+    UserRole,
 )
 from app.crud.admin import log_activity
 
 router = APIRouter()
+
+
+def resolve_target_user_id(current_user: User, user_id_param: Optional[str]) -> Tuple[Optional[int], bool]:
+    """
+    Determines the target user ID for report queries based on caller's role and authorization.
+    Returns (target_user_id, is_admin).
+    - If caller is Admin:
+      - None, '', or 'all' -> target_user_id = None (system-wide data across all users)
+      - valid integer string -> target_user_id = int (filtered to specific user)
+    - If caller is Non-Admin (standard / premium):
+      - Always target_user_id = current_user.id (strictly enforced)
+    """
+    is_admin = (
+        has_permission(current_user, Permission.VIEW_OTHER_USERS_DATA)
+        or normalize_role(current_user.role) == UserRole.ADMIN.value
+    )
+    if is_admin:
+        if user_id_param and user_id_param.strip().lower() != "all":
+            try:
+                return int(user_id_param.strip()), True
+            except ValueError:
+                return None, True
+        return None, True
+    return current_user.id, False
 
 
 @router.get("/data", response_model=ReportDataResponse, status_code=200)
@@ -36,13 +62,16 @@ def get_report_data_endpoint(
     transaction_type: str = Query("all", description="Transaction type: all, income, expense"),
     category: Optional[str] = Query(None, description="Filter by category or source"),
     account: Optional[str] = Query(None, description="Filter by account"),
+    user_id: Optional[str] = Query(None, description="Target user ID or 'all' for system-wide (Admin only)"),
 ):
     """
     Returns aggregated report statistics, breakdowns, timeline data, and transaction history.
+    Admins can view system-wide data or inspect specific users.
     """
+    target_user_id, is_admin = resolve_target_user_id(current_user, user_id)
     return get_user_report_data(
         db=db,
-        user_id=current_user.id,
+        user_id=target_user_id,
         period_type=period_type,
         month=month,
         year=year,
@@ -51,6 +80,7 @@ def get_report_data_endpoint(
         transaction_type=transaction_type,
         category=category,
         account=account,
+        is_admin=is_admin,
     )
 
 
@@ -67,6 +97,7 @@ def export_excel_report_endpoint(
     transaction_type: str = Query("all", description="Transaction type: all, income, expense"),
     category: Optional[str] = Query(None, description="Filter by category or source"),
     account: Optional[str] = Query(None, description="Filter by account"),
+    user_id: Optional[str] = Query(None, description="Target user ID or 'all' for system-wide (Admin only)"),
 ):
     """
     Generates and downloads an Excel spreadsheet (.xlsx).
@@ -85,6 +116,8 @@ def export_excel_report_endpoint(
                 detail="Permission denied: Exporting the full financial summary report is reserved for Premium and Admin members. Normal users can export transaction data only. Please subscribe to Premium."
             )
 
+    target_user_id, _ = resolve_target_user_id(current_user, user_id)
+
     excel_buffer = generate_excel_report(
         db=db,
         user=current_user,
@@ -98,12 +131,13 @@ def export_excel_report_endpoint(
         account=account,
         is_limited=False,
         transactions_only=is_transactions_only,
+        target_user_id=target_user_id,
     )
 
     log_activity(
         db=db,
         action="EXPORT_EXCEL",
-        details=f"User exported Excel report for period '{period_type}' (Scope: '{scope_norm}').",
+        details=f"User exported Excel report for period '{period_type}' (Scope: '{scope_norm}', Target: '{target_user_id or 'all'}').",
         user_id=current_user.id,
         user_email=current_user.email,
         resource_type="report",
@@ -136,6 +170,7 @@ def export_pdf_report_endpoint(
     transaction_type: str = Query("all", description="Transaction type: all, income, expense"),
     category: Optional[str] = Query(None, description="Filter by category or source"),
     account: Optional[str] = Query(None, description="Filter by account"),
+    user_id: Optional[str] = Query(None, description="Target user ID or 'all' for system-wide (Admin only)"),
 ):
     """
     Generates and downloads a comprehensive professional PDF financial report.
@@ -146,6 +181,8 @@ def export_pdf_report_endpoint(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Permission denied: Exporting the full financial summary report is reserved for Premium and Admin members. Normal users can export transaction data only. Please subscribe to Premium."
         )
+
+    target_user_id, _ = resolve_target_user_id(current_user, user_id)
 
     pdf_buffer = generate_pdf_report(
         db=db,
@@ -159,12 +196,13 @@ def export_pdf_report_endpoint(
         category=category,
         account=account,
         is_limited=False,
+        target_user_id=target_user_id,
     )
 
     log_activity(
         db=db,
         action="EXPORT_PDF",
-        details=f"User exported full PDF report for period '{period_type}'.",
+        details=f"User exported full PDF report for period '{period_type}' (Target: '{target_user_id or 'all'}').",
         user_id=current_user.id,
         user_email=current_user.email,
         resource_type="report",
@@ -196,13 +234,16 @@ def export_csv_report_endpoint(
     transaction_type: str = Query("all", description="Transaction type: all, income, expense"),
     category: Optional[str] = Query(None, description="Filter by category or source"),
     account: Optional[str] = Query(None, description="Filter by account"),
+    user_id: Optional[str] = Query(None, description="Target user ID or 'all' for system-wide (Admin only)"),
 ):
     """
     Generates and downloads a CSV export of user transactions.
     """
+    target_user_id, _ = resolve_target_user_id(current_user, user_id)
+
     csv_buffer = generate_csv_report(
         db=db,
-        user_id=current_user.id,
+        user_id=target_user_id,
         period_type=period_type,
         month=month,
         year=year,
@@ -211,12 +252,13 @@ def export_csv_report_endpoint(
         transaction_type=transaction_type,
         category=category,
         account=account,
+        requesting_user=current_user,
     )
 
     log_activity(
         db=db,
         action="EXPORT_CSV",
-        details=f"User exported CSV transactions for period '{period_type}'.",
+        details=f"User exported CSV transactions for period '{period_type}' (Target: '{target_user_id or 'all'}').",
         user_id=current_user.id,
         user_email=current_user.email,
         resource_type="report",
