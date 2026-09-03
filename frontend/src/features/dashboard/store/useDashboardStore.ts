@@ -22,13 +22,12 @@ interface DashboardStore {
 }
 
 const currentYear = new Date().getFullYear();
-const currentMonth = new Date().getMonth() + 1; // 1-12
 
 const useDashboardStore = create<DashboardStore>((set, get) => ({
   stats: null,
   isLoading: false,
   error: null,
-  selectedMonth: currentMonth,
+  selectedMonth: null,
   selectedYear: currentYear,
 
   setSelectedMonth: (month) => {

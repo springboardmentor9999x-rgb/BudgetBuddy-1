@@ -31,8 +31,10 @@ def resolve_target_user_id(current_user: User, user_id_param: Optional[str]) -> 
     Determines the target user ID for report queries based on caller's role and authorization.
     Returns (target_user_id, is_admin).
     - If caller is Admin:
-      - None, '', or 'all' -> target_user_id = None (system-wide data across all users)
+      - None, '', or 'me' -> target_user_id = current_user.id (defaults to admin's personal reports)
+      - 'all' -> target_user_id = None (system-wide data across all users)
       - valid integer string -> target_user_id = int (filtered to specific user)
+      - invalid integer string -> target_user_id = current_user.id
     - If caller is Non-Admin (standard / premium):
       - Always target_user_id = current_user.id (strictly enforced)
     """
@@ -41,13 +43,18 @@ def resolve_target_user_id(current_user: User, user_id_param: Optional[str]) -> 
         or normalize_role(current_user.role) == UserRole.ADMIN.value
     )
     if is_admin:
-        if user_id_param and user_id_param.strip().lower() != "all":
-            try:
-                return int(user_id_param.strip()), True
-            except ValueError:
+        if user_id_param:
+            param_clean = user_id_param.strip().lower()
+            if param_clean == "all":
                 return None, True
-        return None, True
+            if param_clean not in ("", "me"):
+                try:
+                    return int(param_clean), True
+                except ValueError:
+                    return current_user.id, True
+        return current_user.id, True
     return current_user.id, False
+
 
 
 @router.get("/data", response_model=ReportDataResponse, status_code=200)

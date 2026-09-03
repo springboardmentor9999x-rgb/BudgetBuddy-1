@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.schemas.expense import ExpenseCreate
 from app.models.expense import Expense
@@ -57,20 +58,60 @@ def create_expense(db: Session, user_id: int, category: str, amount: float, desc
     return expense
 
 
-def get_expenses_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> list[Expense] | None:
-    """_summary_
-
-    Args:
-        db (Session): the database session
-        user_id (int): the ID of the user for whom to retrieve expenses
-        skip (int, optional): the number of expenses to skip. Defaults to 0.
-        limit (int, optional): the maximum number of expenses to retrieve. Defaults to 100.
-
-    Returns:
-        list[Expense] | None: the list of retrieved expenses or None if not found
+def get_expenses_by_user(
+    db: Session,
+    user_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    category: Optional[str] = None,
+    account: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    min_amount: Optional[float] = None,
+    max_amount: Optional[float] = None,
+    search: Optional[str] = None,
+    sort_by: str = "date_desc"
+) -> list[Expense]:
     """
-    smt = select(Expense).where(Expense.user_id == user_id).offset(skip).limit(limit)
-    return db.execute(smt).scalars().all()
+    Retrieves filtered expense records with pagination and sorting.
+    If user_id is None, retrieves cross-user records (Admin mode).
+    """
+    smt = select(Expense)
+    if user_id is not None:
+        smt = smt.where(Expense.user_id == user_id)
+    if category and category.strip() and category.strip().lower() != "all":
+        smt = smt.where(Expense.category == category.strip())
+    if account and account.strip() and account.strip().lower() != "all":
+        acc_str = account.strip()
+        smt = smt.where(or_(Expense.account == acc_str, Expense.account.ilike(f"%{acc_str}%")))
+    if start_date is not None:
+        smt = smt.where(Expense.date >= start_date)
+    if end_date is not None:
+        smt = smt.where(Expense.date <= end_date)
+    if min_amount is not None:
+        smt = smt.where(Expense.amount >= min_amount)
+    if max_amount is not None:
+        smt = smt.where(Expense.amount <= max_amount)
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        smt = smt.where(or_(
+            Expense.description.ilike(term),
+            Expense.category.ilike(term),
+            Expense.account.ilike(term)
+        ))
+
+    if sort_by == "amount_asc":
+        smt = smt.order_by(Expense.amount.asc(), Expense.date.desc())
+    elif sort_by == "amount_desc":
+        smt = smt.order_by(Expense.amount.desc(), Expense.date.desc())
+    elif sort_by == "date_asc":
+        smt = smt.order_by(Expense.date.asc(), Expense.id.asc())
+    else:
+        smt = smt.order_by(Expense.date.desc(), Expense.id.desc())
+
+    smt = smt.offset(skip).limit(limit)
+    return list(db.execute(smt).scalars().all())
+
 
 
 def get_expense(db: Session, expense_id: int, user_id: int) -> Expense | None:

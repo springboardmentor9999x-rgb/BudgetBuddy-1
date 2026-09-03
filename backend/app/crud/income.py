@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.models.income import Income
 from app.models.account import Account
@@ -55,20 +56,56 @@ def create_income(db: Session, user_id: int, amount: float, source: str, date: d
     return income_data
 
 
-def get_incomes_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> list[Income]:
-    """_summary_
-
-    Args:
-        db (Session): the database session
-        user_id (int): the ID of the user for whom to retrieve incomes
-        skip (int, optional): the number of incomes to skip. Defaults to 0.
-        limit (int, optional): the maximum number of incomes to retrieve. Defaults to 100.
-
-    Returns:
-        list[Income]: the list of retrieved incomes
+def get_incomes_by_user(
+    db: Session,
+    user_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    source: Optional[str] = None,
+    account: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    min_amount: Optional[float] = None,
+    max_amount: Optional[float] = None,
+    search: Optional[str] = None,
+    sort_by: str = "date_desc"
+) -> list[Income]:
     """
-    smt = select(Income).where(Income.user_id == user_id).offset(skip).limit(limit)
-    return db.execute(smt).scalars().all()
+    Retrieves filtered income records with pagination and sorting.
+    If user_id is None, retrieves cross-user records (Admin mode).
+    """
+    smt = select(Income)
+    if user_id is not None:
+        smt = smt.where(Income.user_id == user_id)
+    if source and source.strip() and source.strip().lower() != "all":
+        smt = smt.where(Income.source == source.strip())
+    if account and account.strip() and account.strip().lower() != "all":
+        acc_str = account.strip()
+        smt = smt.where(or_(Income.account == acc_str, Income.account.ilike(f"%{acc_str}%")))
+    if start_date is not None:
+        smt = smt.where(Income.date >= start_date)
+    if end_date is not None:
+        smt = smt.where(Income.date <= end_date)
+    if min_amount is not None:
+        smt = smt.where(Income.amount >= min_amount)
+    if max_amount is not None:
+        smt = smt.where(Income.amount <= max_amount)
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        smt = smt.where(or_(Income.source.ilike(term), Income.account.ilike(term)))
+
+    if sort_by == "amount_asc":
+        smt = smt.order_by(Income.amount.asc(), Income.date.desc())
+    elif sort_by == "amount_desc":
+        smt = smt.order_by(Income.amount.desc(), Income.date.desc())
+    elif sort_by == "date_asc":
+        smt = smt.order_by(Income.date.asc(), Income.id.asc())
+    else:
+        smt = smt.order_by(Income.date.desc(), Income.id.desc())
+
+    smt = smt.offset(skip).limit(limit)
+    return list(db.execute(smt).scalars().all())
+
 
 
 def get_income(db: Session, income_id: int, user_id: int) -> Income | None:

@@ -263,7 +263,7 @@ def get_dashboard_stats(
     cat_results = db.execute(cat_stmt).all()
 
     # Fallback to all-time categories if no expenses exist in the period yet
-    if not cat_results and (month is None and year is None):
+    if not cat_results:
         all_cat_stmt = select(Expense.category, func.sum(Expense.amount)).where(
             Expense.user_id == user_id
         ).group_by(Expense.category)

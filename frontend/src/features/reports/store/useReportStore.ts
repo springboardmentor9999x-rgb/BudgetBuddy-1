@@ -33,7 +33,7 @@ const initialFilters: ReportFilterState = {
   transaction_type: 'all',
   category: 'all',
   account: 'all',
-  user_id: 'all',
+  user_id: 'me',
 };
 
 export const useReportStore = create<ReportStoreState>((set, get) => ({

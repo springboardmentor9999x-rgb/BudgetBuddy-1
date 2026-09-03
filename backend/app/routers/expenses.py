@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,12 +17,14 @@ from app.core.authorization import (
     Permission,
     require_permission,
     check_resource_ownership,
+    resolve_transaction_target_user,
 )
 from app.services.notification_service import (
     check_budget_notifications,
     check_monthly_deficit_notifications,
     check_account_overdraft_notifications,
 )
+from app.routers.incomes import parse_date_param
 
 router = APIRouter()
 
@@ -44,13 +48,40 @@ async def add_expense(
 
 @router.get("/get-expenses", response_model=list[ExpenseOut], status_code=200)
 def get_expenses(
+    skip: int = 0,
+    limit: int = 100,
+    search: Optional[str] = Query(None, description="Search keyword in description, category, or account"),
+    start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD or ISO"),
+    end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD or ISO"),
+    category: Optional[str] = Query(None, description="Filter by expense category"),
+    account: Optional[str] = Query(None, description="Filter by linked account"),
+    min_amount: Optional[float] = Query(None, ge=0, description="Minimum amount"),
+    max_amount: Optional[float] = Query(None, ge=0, description="Maximum amount"),
+    sort_by: str = Query("date_desc", description="Sorting option"),
+    user_id: Optional[str] = Query(None, description="User scope (Admin only: 'me', 'all', or user ID)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.EXPENSE_READ_OWN)),
-    skip: int = 0,
-    limit: int = 100
 ):
-    """Retrieve all expenses for the authenticated user."""
-    return get_expenses_by_user(db, current_user.id, skip, limit)
+    """Retrieve filterable expense records for authenticated user (or cross-user for Admin)."""
+    target_user_id = resolve_transaction_target_user(current_user, user_id)
+    parsed_start = parse_date_param(start_date, is_end_of_day=False)
+    parsed_end = parse_date_param(end_date, is_end_of_day=True)
+
+    return get_expenses_by_user(
+        db=db,
+        user_id=target_user_id,
+        skip=skip,
+        limit=limit,
+        category=category,
+        account=account,
+        start_date=parsed_start,
+        end_date=parsed_end,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        search=search,
+        sort_by=sort_by,
+    )
+
 
 
 @router.get("/get-expense/{expense_id}", response_model=ExpenseOut, status_code=200)

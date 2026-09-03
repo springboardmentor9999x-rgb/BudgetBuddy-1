@@ -5,10 +5,11 @@ import { useShallow } from 'zustand/shallow';
 import ExpenseCard from '../components/ExpenseCard.tsx';
 import ExpenseForm from '../components/ExpenseForm.tsx';
 import DeleteConfirm from '../../DeleteConfirm';
+import { ExpenseFilterBar } from '../components/ExpenseFilterBar.tsx';
 
 import useExpenseStore from '../store/useExpenseStore.ts';
 import useIncomeStore from '../../income/store/useIncomeStore.ts';
-import type { ExpenseCreate, Expense } from '../types/expense.type';
+import type { ExpenseCreate, Expense, ExpenseFilterParams } from '../types/expense.type';
 
 import { FaWallet, FaChartLine, FaCalendarAlt } from "react-icons/fa";
 import { MdTrendingUp, MdTrendingDown } from "react-icons/md";
@@ -62,6 +63,20 @@ const ExpensePage = () => {
     };
     loadData();
   }, [fetchExpenses, fetchIncomes]);
+
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
+
+  const handleFilterChange = async (filters: ExpenseFilterParams) => {
+    setIsFilterLoading(true);
+    try {
+      await fetchExpenses(filters);
+    } catch (error) {
+      console.error('Failed to apply expense filters:', error);
+      toast.error('Failed to filter expenses');
+    } finally {
+      setIsFilterLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({ category: '', amount: 0, description: '', date: new Date().toISOString().split('T')[0], account: '' });
@@ -242,6 +257,12 @@ const ExpensePage = () => {
             </div>
           </div>
 
+          {/* Expense Filters Bar */}
+          <ExpenseFilterBar
+            onFilterChange={handleFilterChange}
+            expenses={expenses}
+            isLoading={isFilterLoading}
+          />
 
           {/* Recent Expenses List */}
           <div className="bg-[#1e252e] rounded-xl border border-white/5 overflow-hidden">

@@ -4,8 +4,9 @@ import toast from 'react-hot-toast';
 import IncomeCard from '../components/IncomeCard.tsx';
 import IncomeForm from '../components/IncomeForm.tsx';
 import DeleteConfirm from '../../DeleteConfirm.tsx';
+import { IncomeFilterBar } from '../components/IncomeFilterBar.tsx';
 
-import type { IncomeCreate, Income } from '../types/income.type.ts';
+import type { IncomeCreate, Income, IncomeFilterParams } from '../types/income.type.ts';
 import useIncomeStore from '../store/useIncomeStore.ts';
 import useExpenseStore from '../../expense/store/useExpenseStore.ts';
 import Header from '../components/Header.tsx';
@@ -46,6 +47,20 @@ const IncomePage = () => {
       toast.error('Failed to fetch income data. Please try again.');
     }
   }, [fetchIncomes, fetchExpenses]);
+
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
+
+  const handleFilterChange = async (filters: IncomeFilterParams) => {
+    setIsFilterLoading(true);
+    try {
+      await fetchIncomes(filters);
+    } catch (error) {
+      console.error('Failed to apply income filters:', error);
+      toast.error('Failed to filter incomes');
+    } finally {
+      setIsFilterLoading(false);
+    }
+  };
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -237,6 +252,12 @@ const IncomePage = () => {
           </div>
         </div>
 
+        {/* Income Filters Bar */}
+        <IncomeFilterBar
+          onFilterChange={handleFilterChange}
+          incomes={incomes}
+          isLoading={isFilterLoading}
+        />
 
         {/* income list  */}
         <div className="bg-[#1e252e] rounded-xl border border-white/5 overflow-hidden">

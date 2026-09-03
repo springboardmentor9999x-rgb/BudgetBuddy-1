@@ -49,3 +49,16 @@ export type ExpenseUpdate = {
   category?: string;
   account?: string;
 };
+
+export interface ExpenseFilterParams {
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+  category?: string;
+  account?: string;
+  min_amount?: number;
+  max_amount?: number;
+  sort_by?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
+  user_id?: string;
+}
+

@@ -146,7 +146,7 @@ export const ReportFilters: React.FC = () => {
           <div className="flex items-center gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-200">
             <RiShieldUserLine className="text-purple-400 text-lg shrink-0" />
             <span>
-              <strong>Administrator Audit Mode:</strong> You are viewing platform-wide financial records. Use the <em>User Scope</em> filter to inspect individual user records or audit the entire platform.
+              <strong>Administrator Audit Mode:</strong> You are viewing your personal admin financial records by default. Use the <em>User Scope</em> filter to inspect specific users or audit the entire platform.
             </span>
           </div>
         )}
@@ -291,12 +291,15 @@ export const ReportFilters: React.FC = () => {
                 <RiShieldUserLine className="text-purple-400" /> User Scope
               </label>
               <select
-                value={filters.user_id || 'all'}
+                value={filters.user_id || 'me'}
                 onChange={(e) => {
                   setFilter('user_id', e.target.value);
                 }}
                 className="w-full bg-[#1b1629] border border-purple-500/30 rounded-xl px-3 py-2 text-sm text-purple-100 focus:outline-none focus:border-purple-400 transition-colors"
               >
+                <option value="me" className="bg-[#161c24] text-white">
+                  👤 My Reports (Admin)
+                </option>
                 <option value="all" className="bg-[#161c24] text-white">
                   🌐 All Users (System-wide)
                 </option>

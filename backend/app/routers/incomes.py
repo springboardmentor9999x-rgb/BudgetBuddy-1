@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
@@ -16,10 +18,36 @@ from app.core.authorization import (
     Permission,
     require_permission,
     check_resource_ownership,
+    resolve_transaction_target_user,
 )
 from app.services.notification_service import check_monthly_deficit_notifications
 
 router = APIRouter()
+
+
+def parse_date_param(date_str: Optional[str], is_end_of_day: bool = False) -> Optional[datetime]:
+    """Helper to parse date/datetime string with optional end-of-day timestamp."""
+    if not date_str or not str(date_str).strip():
+        return None
+    cleaned = str(date_str).strip()
+    if cleaned.endswith("Z"):
+        cleaned = cleaned[:-1]
+    if "T" in cleaned:
+        try:
+            return datetime.fromisoformat(cleaned)
+        except Exception:
+            pass
+    try:
+        parsed = datetime.strptime(cleaned, "%Y-%m-%d")
+        if is_end_of_day:
+            return parsed.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return parsed
+    except ValueError:
+        pass
+    try:
+        return datetime.fromisoformat(cleaned)
+    except Exception:
+        return None
 
 
 @router.post("/add-income", response_model=IncomeResponse, status_code=201)
@@ -41,11 +69,38 @@ async def add_income(
 def list_incomes(
     skip: int = 0,
     limit: int = 100,
+    search: Optional[str] = Query(None, description="Search keyword in source or account"),
+    start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD or ISO"),
+    end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD or ISO"),
+    source: Optional[str] = Query(None, description="Filter by income source"),
+    account: Optional[str] = Query(None, description="Filter by linked account"),
+    min_amount: Optional[float] = Query(None, ge=0, description="Minimum amount"),
+    max_amount: Optional[float] = Query(None, ge=0, description="Maximum amount"),
+    sort_by: str = Query("date_desc", description="Sorting option"),
+    user_id: Optional[str] = Query(None, description="User scope (Admin only: 'me', 'all', or user ID)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(Permission.INCOME_READ_OWN))
 ):
-    """Retrieve all income records for the authenticated user."""
-    return get_incomes_by_user(db, current_user.id, skip, limit)
+    """Retrieve filterable income records for authenticated user (or cross-user for Admin)."""
+    target_user_id = resolve_transaction_target_user(current_user, user_id)
+    parsed_start = parse_date_param(start_date, is_end_of_day=False)
+    parsed_end = parse_date_param(end_date, is_end_of_day=True)
+
+    return get_incomes_by_user(
+        db=db,
+        user_id=target_user_id,
+        skip=skip,
+        limit=limit,
+        source=source,
+        account=account,
+        start_date=parsed_start,
+        end_date=parsed_end,
+        min_amount=min_amount,
+        max_amount=max_amount,
+        search=search,
+        sort_by=sort_by
+    )
+
 
 
 @router.get("/get-income/{income_id}", response_model=IncomeResponse, status_code=200)

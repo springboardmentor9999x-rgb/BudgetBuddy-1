@@ -1,11 +1,22 @@
-// import axios from 'axios';
 import { api } from '../../../api/api';
 
-import type { ExpenseCreate, ExpenseUpdate } from '../types/expense.type';
+import type { ExpenseCreate, ExpenseUpdate, ExpenseFilterParams } from '../types/expense.type';
 
-async function getExpensesApi() {
+async function getExpensesApi(filters?: ExpenseFilterParams) {
   try {
-    const response = await api.get('/expenses/get-expenses');
+    const params: Record<string, any> = {};
+    if (filters) {
+      if (filters.search) params.search = filters.search;
+      if (filters.start_date) params.start_date = filters.start_date;
+      if (filters.end_date) params.end_date = filters.end_date;
+      if (filters.category) params.category = filters.category;
+      if (filters.account) params.account = filters.account;
+      if (filters.min_amount !== undefined) params.min_amount = filters.min_amount;
+      if (filters.max_amount !== undefined) params.max_amount = filters.max_amount;
+      if (filters.sort_by) params.sort_by = filters.sort_by;
+      if (filters.user_id) params.user_id = filters.user_id;
+    }
+    const response = await api.get('/expenses/get-expenses', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching expenses:', error);

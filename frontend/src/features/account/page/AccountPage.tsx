@@ -9,7 +9,6 @@ import {
   RiCloseLine,
   RiSparklingLine,
 } from 'react-icons/ri';
-import toast from 'react-hot-toast';
 
 import useAccountStore from '../store/useAccountStore.ts';
 import { useAuthStore } from '../../auth/store/useAuthStore.ts';
@@ -30,11 +29,9 @@ const AccountPage = () => {
   const bankAccounts = useAccountStore((state) => state.bankAccounts);
   const fetchBankAccounts = useAccountStore((state) => state.fetchBankAccounts);
   const currentUser = useAuthStore((state) => state.user);
-  const upgradeTier = useAuthStore((state) => state.upgradeTier);
 
   const [editMode, setEditModeState] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [isSwitchingTier, setIsSwitchingTier] = useState(false);
 
   // fetches the bank accounts when the component mounts
   useEffect(() => {
@@ -46,18 +43,6 @@ const AccountPage = () => {
     email: "—",
     role: "user" as UserRole,
     profile: null,
-  };
-
-  const handleTierSwitch = async (targetTier: UserRole) => {
-    setIsSwitchingTier(true);
-    try {
-      await upgradeTier(targetTier);
-      toast.success(`Account role changed to ${targetTier.toUpperCase()}`);
-    } catch {
-      toast.error('Failed to change tier.');
-    } finally {
-      setIsSwitchingTier(false);
-    }
   };
 
   const currentRole = displayUser.role || 'user';

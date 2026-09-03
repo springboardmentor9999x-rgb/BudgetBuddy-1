@@ -7,16 +7,14 @@ import {
   deleteIncomeApi,
 } from "../services/income.api.ts";
 
-import type { IncomeCreate, Income } from "../types/income.type.ts";
-
-
+import type { IncomeCreate, Income, IncomeFilterParams } from "../types/income.type.ts";
 
 interface IncomeStore {
   // State
   incomes: Income[];
 
   // API operations
-  fetchIncomes: () => Promise<void>;
+  fetchIncomes: (filters?: IncomeFilterParams) => Promise<void>;
   createIncome: (income: IncomeCreate) => Promise<void>;
   updateIncomeData: (
     incomeId: number,
@@ -25,15 +23,14 @@ interface IncomeStore {
   deleteIncomeData: (incomeId: number) => Promise<void>;
 }
 
-
 const useIncomeStore = create<IncomeStore>((set) => ({
   // State
   incomes: [],
 
   // API operations
-  fetchIncomes: async () => {
+  fetchIncomes: async (filters) => {
     try {
-      const response = await getIncomesApi();
+      const response = await getIncomesApi(filters);
 
       set({
         incomes: response,

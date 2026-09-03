@@ -10,6 +10,7 @@ import {
 import type {
   ExpenseCreate,
   ExpenseUpdate,
+  ExpenseFilterParams,
 } from "../types/expense.type.ts";
 
 
@@ -34,7 +35,7 @@ interface ExpenseStore {
   deleteExpense: (expenseId: number) => void;
 
   // API operations
-  fetchExpenses: () => Promise<void>;
+  fetchExpenses: (filters?: ExpenseFilterParams) => Promise<void>;
   addNewExpense: (expense: ExpenseCreate) => Promise<void>;
   updateExistingExpense: (
     expenseId: number,
@@ -79,9 +80,9 @@ const useExpenseStore = create<ExpenseStore>((set) => ({
   // API operations
   // -------------------------
 
-  fetchExpenses: async () => {
+  fetchExpenses: async (filters) => {
     try {
-      const data = await getExpensesApi();
+      const data = await getExpensesApi(filters);
 
       set({
         expenses: data,

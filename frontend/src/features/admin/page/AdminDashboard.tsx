@@ -32,6 +32,8 @@ import {
   type SystemAnalyticsResponse,
 } from '../services/admin.api.ts';
 import SubscriptionRequestsSection from '../components/SubscriptionRequestsSection.tsx';
+import { getDashboardStatsApi } from '../../dashboard/services/dashboard.api.ts';
+import type { DashboardStatsResponse } from '../../dashboard/types/dashboard.type.ts';
 
 // Register Chart.js components
 ChartJS.register(
@@ -50,6 +52,7 @@ const AdminDashboard: React.FC = () => {
   setPageTitle('System Analytics & Administration | BudgetBuddy');
 
   const [analytics, setAnalytics] = useState<SystemAnalyticsResponse | null>(null);
+  const [personalStats, setPersonalStats] = useState<DashboardStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,8 +60,15 @@ const AdminDashboard: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchSystemAnalyticsApi();
-      setAnalytics(data);
+      const [platformData, pStats] = await Promise.all([
+        fetchSystemAnalyticsApi(),
+        getDashboardStatsApi(null, new Date().getFullYear()).catch((e) => {
+          console.error('Failed to load personal admin stats:', e);
+          return null;
+        }),
+      ]);
+      setAnalytics(platformData);
+      setPersonalStats(pStats);
     } catch (err: any) {
       console.error('Failed to fetch system analytics:', err);
       setError(err?.response?.data?.detail || 'Failed to load platform analytics.');
@@ -210,6 +220,49 @@ const AdminDashboard: React.FC = () => {
           </div>
         ) : analytics ? (
           <>
+            {/* ── Admin Personal Financial Snapshot ── */}
+            {personalStats && (
+              <div className="bg-gradient-to-r from-purple-950/40 via-[#161c24] to-cyan-950/30 border border-purple-500/25 rounded-2xl p-5 shadow-xl">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <h2 className="text-base font-bold text-white">Your Personal Financial Overview (Administrator Profile)</h2>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Personal liquidity, year-to-date inflows, and expenditure metrics for your account.
+                    </p>
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition-all self-start md:self-auto shrink-0 flex items-center gap-1.5"
+                  >
+                    Open Personal Dashboard →
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/5">
+                  <div className="bg-[#11161d] rounded-xl p-3 border border-white/5">
+                    <span className="text-[11px] text-gray-400 uppercase font-semibold">Total Net Balance</span>
+                    <p className="text-lg font-extrabold text-white mt-0.5">{formatCurrency(personalStats.user_stats.balance)}</p>
+                  </div>
+                  <div className="bg-[#11161d] rounded-xl p-3 border border-white/5">
+                    <span className="text-[11px] text-gray-400 uppercase font-semibold">Incomes Logged</span>
+                    <p className="text-lg font-extrabold text-emerald-400 mt-0.5">+{formatCurrency(personalStats.user_stats.income)}</p>
+                  </div>
+                  <div className="bg-[#11161d] rounded-xl p-3 border border-white/5">
+                    <span className="text-[11px] text-gray-400 uppercase font-semibold">Expenses Deducted</span>
+                    <p className="text-lg font-extrabold text-rose-400 mt-0.5">-{formatCurrency(personalStats.user_stats.expenses)}</p>
+                  </div>
+                  <div className="bg-[#11161d] rounded-xl p-3 border border-white/5">
+                    <span className="text-[11px] text-gray-400 uppercase font-semibold">Net Savings</span>
+                    <p className={`text-lg font-extrabold mt-0.5 ${personalStats.user_stats.savings >= 0 ? 'text-cyan-400' : 'text-rose-400'}`}>
+                      {formatCurrency(personalStats.user_stats.savings)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ── KPI Metrics Grid ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Total Users */}

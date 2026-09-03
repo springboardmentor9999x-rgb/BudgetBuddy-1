@@ -213,3 +213,30 @@ def check_tier_limit(user: User, feature: str, current_count: int) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Basic tier limit reached ({limit} {feature_label}). Upgrade to Premium for unlimited {feature_label} and advanced features."
         )
+
+
+def resolve_transaction_target_user(current_user: User, user_id_param: Optional[str]) -> Optional[int]:
+    """
+    Resolves the target user ID for queries (incomes, expenses, dashboard).
+    - Non-admin callers are strictly confined to their own user ID.
+    - Admin callers:
+      - None, '', 'me', or invalid non-numeric strings return current_user.id (defaults to own data).
+      - 'all' returns None (system-wide across all users).
+      - numeric string returns the parsed integer user ID.
+    """
+    is_admin = (
+        has_permission(current_user, Permission.VIEW_OTHER_USERS_DATA)
+        or normalize_role(current_user.role) == UserRole.ADMIN.value
+    )
+    if not is_admin:
+        return current_user.id
+
+    if not user_id_param or user_id_param.strip().lower() in ("", "me"):
+        return current_user.id
+    if user_id_param.strip().lower() == "all":
+        return None
+    try:
+        return int(user_id_param.strip())
+    except ValueError:
+        return current_user.id
+

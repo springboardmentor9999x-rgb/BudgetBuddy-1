@@ -49,4 +49,16 @@ interface IncomeUpdate {
   account?: string; // Optional field for update
 }
 
+export interface IncomeFilterParams {
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+  source?: string;
+  account?: string;
+  min_amount?: number;
+  max_amount?: number;
+  sort_by?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
+  user_id?: string;
+}
+
 export type { Income, IncomeCreate, IncomeUpdate };
