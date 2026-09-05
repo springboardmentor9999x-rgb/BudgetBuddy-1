@@ -8,6 +8,7 @@ dependencies = [
     "alembic>=1.18.5",
     "argon2-cffi>=25.1.0",
     "fastapi>=0.139.2",
+    "httpx>=0.28.1",
     "openpyxl>=3.1.5",
     "passlib[bcrypt]>=1.7.4",
     "psycopg2-binary>=2.9.12",
@@ -21,3 +22,13 @@ dependencies = [
     "sqlalchemy>=2.0.51",
     "uvicorn[standard]>=0.51.0",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:.*httpx.*:UserWarning",
+    "ignore:.*httpx.*:Warning",
+]
+
+
