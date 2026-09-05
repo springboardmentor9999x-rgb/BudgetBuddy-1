@@ -5,21 +5,41 @@ from alembic import context
 
 from app.database import Base
 
-# Import all models
+
+# ==========================================
+# IMPORT ALL MODELS
+# ==========================================
+
 from app.models.user import User
 from app.models.profile import Profile
 from app.models.income import Income
 from app.models.expense import Expense
 from app.models.budget import Budget
+from app.models.account import Account
+from app.models.notification import Notification
+from app.models.savings_goal import SavingsGoal
+
+
+# ==========================================
+# ALEMBIC CONFIGURATION
+# ==========================================
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Tell Alembic about your models
+
+# ==========================================
+# SQLALCHEMY METADATA
+# ==========================================
+
 target_metadata = Base.metadata
 
+
+# ==========================================
+# OFFLINE MIGRATIONS
+# ==========================================
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
@@ -34,6 +54,10 @@ def run_migrations_offline():
     with context.begin_transaction():
         context.run_migrations()
 
+
+# ==========================================
+# ONLINE MIGRATIONS
+# ==========================================
 
 def run_migrations_online():
     connectable = engine_from_config(
@@ -52,6 +76,10 @@ def run_migrations_online():
         with context.begin_transaction():
             context.run_migrations()
 
+
+# ==========================================
+# RUN MIGRATIONS
+# ==========================================
 
 if context.is_offline_mode():
     run_migrations_offline()
