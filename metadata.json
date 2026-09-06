@@ -1,0 +1,6 @@
+{
+  "name": "BudgetBuddy - Budget & Expense Tracker",
+  "description": "Creative Financial Ledger for personal budget accounting, P2P transfer machine, cards & bank vault, category ceilings, and single-click Excel voucher downloads.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
