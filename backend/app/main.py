@@ -6,6 +6,7 @@ from sqlalchemy import text
 from app.api import router as api_router
 from app.database import engine, Base
 import app.models # Ensure all models are loaded
+from app.configs.settings import Settings
 
 
 @asynccontextmanager
@@ -19,9 +20,7 @@ app = FastAPI(title="BudgetBuddy API", version="1.0.0", lifespan=lifespan)
 
 # Allowed origins that can make requests to backend.
 origins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
+    Settings.FRONTEND_URL,
 ]
 
 app.add_middleware(
@@ -33,7 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
-
+# app.frontend("/", directory="dist")
 @app.get("/")
 def root():
     return {"message": "BudgetBuddy API running"}

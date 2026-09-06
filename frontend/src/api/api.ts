@@ -4,7 +4,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../features/auth/store/useAuthStore.ts";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
   withCredentials: true,
 });
 
@@ -15,7 +15,14 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    const isAuthRoute = originalRequest.url?.includes("/auth/login") || originalRequest.url?.includes("/auth/refresh-token");
+    // const isAuthRoute = originalRequest.url?.includes("/auth/login") || originalRequest.url?.includes("/auth/refresh-token");
+    const url = originalRequest?.url ?? "";
+
+    const isAuthRoute =
+      url.includes("/auth/login") ||
+      url.includes("/auth/refresh-token") ||
+      url.includes("/auth/logout");
+      
     if (error.response?.status !== 401 || originalRequest._retry || isAuthRoute) {
       // either not a 401, or  tried refreshing once or the request was to login/refresh, so just reject
       return Promise.reject(error);

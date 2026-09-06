@@ -18,3 +18,6 @@ class Settings:
     GMAIL_PASSWORD: str = os.getenv("GMAIL_PASSWORD")
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY")
+    
+    # Frontend Settings
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")

@@ -4,7 +4,7 @@ import { useNotificationStore } from './useNotificationStore';
 import type { AppNotification } from './useNotificationStore';
 
 function getWsUrl(): string {
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
   let wsUrl = apiBase;
   if (wsUrl.startsWith('http://')) {
     wsUrl = 'ws://' + wsUrl.slice(7);

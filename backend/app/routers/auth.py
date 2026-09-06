@@ -84,8 +84,25 @@ def login(form_data: LoginRequest, db: Session = Depends(get_db), response: Resp
     refresh_token = create_refresh_token(data={"sub": user.email, "role": role_val})
     
     # access and refresh tokens are set in cookies
-    response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="strict", max_age=60*60*24)  # 1 day
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="strict", max_age=60*60*24*7)  # 7 days
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=60 * 15,  # 15 minutes
+        path="/",
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=60 * 60 * 24 * 7,  # 7 days
+        path="/",
+    )
 
     log_activity(
         db=db,
@@ -185,8 +202,19 @@ def refresh_token(refresh_token: str = Cookie(None), response: Response = None):
     
     try:
         payload = verify_refresh_token(refresh_token)
-        access_token = create_access_token(data={"sub": payload["sub"], "role": payload["role"]}, expires_delta_in_seconds=60*60*24)  # 1 day
-        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="strict", max_age=60*60*24)  # 1 day
+        access_token = create_access_token(
+            data={"sub": payload["sub"], "role": payload["role"]}, 
+            expires_delta_in_seconds=60*60*24  # 1 day
+        ) 
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            max_age=60 * 60 * 24,
+            path="/",
+        )
         return {"access_token": access_token, "token_type": "bearer"}
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
